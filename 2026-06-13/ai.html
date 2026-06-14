@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C1A18" media="(prefers-color-scheme: dark)">
+<title>硅基风声 — 风声驿站NPC</title>
+<link rel="icon" href="/images/%E5%B0%8F%E7%9F%A5(1).png">
+<style>
+:root {
+  --bg: #FFFFFF; --fg: #1A1A1A;
+  --card: #FFFFFF; --card-fg: #1A1A1A;
+  --muted: #F5F5F5; --muted-fg: #6B6B6B;
+  --border: #E5E5E5;
+  --nav-accent: #4A3728;
+  --accent-ai: #7A9A8B; --accent-ai-hover: #688677;
+  --accent-game: #B8956A; --accent-game-hover: #A07D52;
+  --card-ai: #FFFFFF;
+  --destructive: #8B3A3A;
+  --font-display: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'Georgia', 'Times New Roman', serif;
+  --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1C1A18; --fg: #EAE4DC;
+    --card: #252220; --card-fg: #EAE4DC;
+    --muted: #2E2B27; --muted-fg: #9A948E;
+    --border: #3D3832;
+    --nav-accent: #C4A97D;
+    --accent-ai: #8FB5A3; --accent-ai-hover: #7A9A8B;
+    --accent-game: #D4B896; --accent-game-hover: #B8956A;
+    --card-ai: var(--card);
+  }
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{color-scheme:light dark;scroll-padding-top:72px}body{font-family:var(--font-sans);background:var(--bg);color:var(--fg);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}a:hover{text-decoration:underline}
+a:focus-visible{outline:2px solid var(--accent-game);outline-offset:2px;border-radius:2px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent-game);outline-offset:2px}
+
+/* Navigation */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 16px;padding-top:max(0px,env(safe-area-inset-top));height:56px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:10}
+.nav-brand{font-size:1rem;font-weight:700;letter-spacing:-0.02em;display:flex;align-items:center;gap:6px;z-index:2}
+.nav-brand-icon{width:20px;height:20px;border-radius:6px;object-fit:cover;vertical-align:middle;background:var(--accent-game);opacity:0.85}
+.nav-toggle{display:none}
+.nav-toggle-label{display:none;width:32px;height:32px;cursor:pointer;z-index:2;position:relative}
+.nav-toggle-label span,.nav-toggle-label span::before,.nav-toggle-label span::after{display:block;height:2px;background:var(--fg);border-radius:1px;transition:transform 0.2s,opacity 0.2s;position:absolute;width:20px;left:6px}
+.nav-toggle-label span{top:15px}
+.nav-toggle-label span::before{content:"";top:-6px}
+.nav-toggle-label span::after{content:"";top:6px}
+.nav-toggle:checked+.nav-toggle-label span{background:transparent}
+.nav-toggle:checked+.nav-toggle-label span::before{top:0;transform:rotate(45deg)}
+.nav-toggle:checked+.nav-toggle-label span::after{top:0;transform:rotate(-45deg)}
+.nav-links{display:flex;gap:12px;font-size:0.8125rem;font-weight:500}
+.nav-links a{color:var(--muted-fg);transition:color 0.15s;padding:6px 2px;border-bottom:2px solid transparent;min-height:44px;display:inline-flex;align-items:center}
+.nav-links a:hover,.nav-links a.active{color:var(--fg);text-decoration:none;border-bottom-color:var(--nav-accent);font-weight:600}
+@media(max-width:640px){
+  .nav-toggle-label{display:block}
+  .nav-links{position:fixed;top:56px;left:0;right:0;background:var(--bg);flex-direction:column;gap:0;padding:8px 0;border-bottom:1px solid var(--border);transform:translateY(-120%);transition:transform 0.2s;z-index:1}
+  .nav-links a{min-height:48px;padding:12px 20px;border-bottom:1px solid var(--muted);width:100%}
+  .nav-toggle:checked~.nav-links{transform:translateY(0)}
+}
+
+/* Layout */
+.container{max-width:1200px;margin:0 auto;padding:16px}
+@media(min-width:768px){.container{padding:24px}}
+.hero-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:32px}
+@media(max-width:768px){.hero-grid{grid-template-columns:1fr;gap:16px;margin-bottom:20px}}
+
+/* Hero - left: top accent stripe */
+.hero-main{border-top:3px solid var(--accent-game);padding-top:16px;padding-left:0}
+.hero-main.ai{border-top-color:var(--accent-ai)}
+.hero-label{font-size:0.75rem;color:var(--muted-fg);margin-bottom:8px;font-weight:500;letter-spacing:0.04em}
+.hero-headline{font-family:var(--font-display);font-size:1.75rem;font-weight:700;line-height:1.3;margin-bottom:12px;text-wrap:balance}
+@media(max-width:480px){.hero-headline{font-size:1.25rem}.hero-overview{font-size:0.8125rem}}
+.hero-headline a{color:var(--fg)}
+.hero-overview{font-size:0.9375rem;color:var(--muted-fg);line-height:1.6;max-width:65ch;margin-bottom:16px}
+.hero-actions{display:flex;gap:16px;font-size:0.8125rem;font-weight:500}
+.hero-actions a{display:inline-flex;align-items:center;gap:4px}
+.hero-actions .game-link{color:var(--accent-game)}
+.hero-actions .ai-link{color:var(--accent-ai)}
+
+
+/* Hero - right sidebar */
+.hero-sidebar{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px}
+.hero-sidebar h3{font-size:0.8125rem;font-weight:600;margin-bottom:14px;color:var(--muted-fg);letter-spacing:0.03em}
+.hero-sidebar li{font-size:0.8125rem;line-height:1.5;padding:7px 0;border-bottom:1px solid var(--muted);list-style:none}
+.hero-sidebar li:last-child{border-bottom:none}
+.hero-sidebar li .source-tag{display:inline-block;font-size:0.6875rem;color:var(--muted-fg);margin-top:2px}
+
+/* Section header */
+.section-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:20px}
+.section-title{font-size:1.125rem;font-weight:600}
+.section-link{font-size:0.8125rem;color:var(--muted-fg);display:inline-flex;align-items:center;gap:3px}
+.section-link:hover{color:var(--fg)}
+
+/* Card grid */
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:36px}
+@media(max-width:768px){.card-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.card-grid{grid-template-columns:1fr}}
+
+/* Magazine cards: no shadows, thin top border + Badge */
+.card{background:var(--card);border:1px solid var(--border);border-top:2px solid var(--accent-game);border-radius:4px;padding:14px 16px;transition:border-color 0.15s;display:block;position:relative}
+.card:hover{border-color:var(--accent-game-hover);text-decoration:none}
+.card.ai{border-top-color:var(--accent-ai)}
+.card.ai:hover{border-color:var(--accent-ai-hover)}
+.card-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px;background:var(--muted)}
+/* Hero card (span-2, large headline) */
+.card-hero{grid-column:span 2;grid-row:span 2;padding:20px 24px}
+.card-hero .card-title{font-size:1.5rem;line-height:1.2;-webkit-line-clamp:3}
+.card-hero .card-summary{font-size:0.9375rem;-webkit-line-clamp:3}
+/* Brief card (text-only, compact) */
+.card-brief{padding:8px 12px}
+.card-brief::after{display:none}
+.card-brief .card-title{font-size:0.8125rem;-webkit-line-clamp:1}
+.card-title{font-family:var(--font-display);font-size:0.9375rem;font-weight:600;line-height:1.3;margin:0 0 6px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--fg);letter-spacing:-0.01em}
+.card-summary{font-size:0.8125rem;color:var(--muted-fg);line-height:1.45;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.card-subtitle{font-size:0.6875rem;color:var(--muted-fg);margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-size:0.6875rem;color:var(--muted-fg);display:flex;align-items:center;gap:6px;font-family:var(--font-sans)}
+.card-meta a{color:var(--muted-fg);display:inline-flex;align-items:center;gap:2px}
+.card-meta a:hover{color:var(--fg)}
+/* Section divider: thin border-t, newspaper-style */
+.section-divider{border-top:1px solid var(--border);margin:20px 0;padding-top:16px}
+
+/* Article detail (专题页) — top border + Badge */
+.article-detail{background:var(--card);border:1px solid var(--border);border-top:2px solid var(--accent-game);border-radius:4px;padding:16px 20px;transition:border-color 0.15s;position:relative}
+.article-detail:hover{border-color:var(--accent-game)}
+.article-detail:last-child{margin-bottom:0}
+.article-detail h3{font-size:1rem;font-weight:500;margin-bottom:6px;line-height:1.4}
+.article-detail h3 a{color:var(--fg)}
+.article-detail .detail-summary{font-size:0.875rem;color:var(--muted-fg);line-height:1.55;margin-bottom:8px}
+.article-detail .detail-source{font-size:0.75rem;color:var(--muted-fg);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.article-detail .detail-source a{color:var(--muted-fg);display:inline-flex;align-items:center;gap:2px;font-size:0.6875rem}
+.article-detail .detail-source a:hover{color:var(--fg)}
+/* AI detail cards: subtle green tint */
+.article-detail.ai-card{border-top-color:var(--accent-ai)}
+
+/* More grid */
+.more-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:32px}
+@media(max-width:768px){.more-grid{grid-template-columns:1fr}}
+.more-section h4{font-size:0.875rem;font-weight:600;margin-bottom:10px}
+.more-list li{font-size:0.8125rem;padding:5px 0;border-bottom:1px solid var(--muted);list-style:none}
+.more-list li:last-child{border-bottom:none}
+.more-list .src{color:var(--muted-fg);font-size:0.6875rem}
+
+/* Keyword tags */
+.keywords{display:flex;flex-wrap:wrap;gap:6px}
+.keyword-tag{display:inline-block;background:var(--muted);color:var(--muted-fg);border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-size:0.75rem;transition:background 0.15s}
+.keyword-tag:hover{background:var(--border);color:var(--fg);text-decoration:none}
+
+/* Editor note */
+.editor-note{background:var(--muted);border-radius:8px;padding:18px 22px;margin:28px 0;font-size:0.875rem;color:var(--muted-fg);line-height:1.65;border-left:3px solid var(--border)}
+/* Brief list: compact rows for score<3 no-image items */
+.brief-list{display:flex;flex-direction:column;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.brief-item{display:flex;align-items:baseline;justify-content:space-between;padding:10px 16px;background:var(--card);gap:12px;border-bottom:1px solid var(--muted)}
+.brief-item:last-child{border-bottom:none}
+.brief-item h4{font-size:0.8125rem;font-weight:500;line-height:1.4;flex:1}
+.brief-item h4 a{color:var(--fg)}
+/* 全部资讯源：双列紧凑布局 */
+.sources-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.sources-grid .brief-item{border-right:1px solid var(--muted)}
+.sources-grid .brief-item:nth-child(2n){border-right:none}
+@media(max-width:640px){.sources-grid{grid-template-columns:1fr}.sources-grid .brief-item{border-right:none}}
+.brief-source{font-size:0.6875rem;color:var(--muted-fg);white-space:nowrap;flex-shrink:0}
+/* Detail cards: 2-column grid for secondary/tertiary */
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+@media(max-width:768px){.detail-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.detail-grid{grid-template-columns:1fr}}
+/* Responsive: mobile polish */
+@media(max-width:480px){
+  .brief-item{flex-direction:column;gap:2px;padding:8px 12px}
+  .brief-item h4{white-space:normal}
+  .brief-source{font-size:0.625rem}
+  .section-header{margin-bottom:12px}
+  .section-title{font-size:1rem}
+  .keywords{gap:4px}
+  .keyword-tag{font-size:0.6875rem;padding:2px 8px}
+  .footer{padding:16px;font-size:0.6875rem}
+  .card-spotlight .spotlight-text .card-title{font-size:1.125rem}
+  .card-spotlight .spotlight-text .card-summary{-webkit-line-clamp:2}
+}
+/* Spotlight card: left-image-right-text, subtle top accent */
+.card-spotlight{display:grid;grid-template-columns:7fr 5fr;gap:20px;align-items:center;padding:0;border:1px solid var(--border);border-top:2px solid var(--accent-game);border-radius:4px;overflow:hidden;background:var(--card)}
+.card-spotlight.ai{border-top-color:var(--accent-ai)}
+.card-spotlight .spotlight-img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:0;margin:0;display:block}
+.card-spotlight .spotlight-text{padding:20px 20px 20px 0}
+.card-spotlight .spotlight-text .card-title{font-size:1.5rem;line-height:1.2;-webkit-line-clamp:3}
+.card-spotlight .spotlight-text .card-summary{font-size:0.9375rem;-webkit-line-clamp:4}
+@media(max-width:640px){.card-spotlight{grid-template-columns:1fr;gap:0}
+.card-spotlight .spotlight-text{padding:16px}}
+/* No-image spotlight: text-dominant */
+.card-spotlight.no-img{grid-template-columns:1fr;padding:28px 32px;min-height:200px}
+.card-spotlight.no-img .spotlight-text .card-title{font-size:1.75rem;-webkit-line-clamp:4}
+.card-spotlight.no-img .spotlight-text .card-summary{font-size:1rem;-webkit-line-clamp:6}
+/* Side navigation */
+.side-nav{position:fixed;right:max(24px,calc((100vw - 1200px)/2 - 180px));top:100px;width:150px;z-index:5}
+@media(max-width:1100px){.side-nav{display:none}}
+.side-nav a{display:block;padding:6px 10px;font-size:0.75rem;color:var(--muted-fg);border-left:2px solid transparent;transition:color 0.15s,border-color 0.15s;text-decoration:none}
+.side-nav a:hover,.side-nav a.active{color:var(--fg);border-left-color:var(--nav-accent)}
+
+/* Footer */
+.footer{border-top:1px solid var(--border);padding:24px;font-size:0.75rem;color:var(--muted-fg);text-align:center;line-height:1.8}
+.footer a{color:var(--muted-fg)}
+.footer a:hover{color:var(--fg)}
+.footer-weekly{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:0.8125rem}
+.footer-weekly a{font-weight:500}
+.footer-weekly .game-link{color:var(--accent-game)}
+.footer-weekly .ai-link{color:var(--accent-ai)}
+
+/* Weekly/Monthly report */
+.report-header{margin-bottom:24px}
+.report-header h1{font-size:1.5rem;font-weight:600;margin-bottom:8px}
+.report-header .period{font-size:0.8125rem;color:var(--muted-fg)}
+.report-stories{margin-bottom:24px}
+/* NPC commentary — editorial column style */
+.npc-commentary{margin:28px 0;padding:24px 28px 24px 24px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--npc-accent,var(--accent-game))}
+.npc-header{display:flex;align-items:baseline;gap:8px;margin-bottom:14px}
+.npc-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--npc-accent,var(--accent-game));flex-shrink:0}
+.npc-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.npc-avatar-sm{width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-right:8px;vertical-align:middle}
+.npc-name{font-size:0.8125rem;font-weight:600;color:var(--fg);letter-spacing:0.02em;font-family:var(--font-sans)}
+.npc-review{font-family:var(--font-display);font-size:1rem;line-height:1.75;color:var(--fg)}
+@media(max-width:480px){.npc-commentary{padding:16px 18px 16px 14px}.npc-review{font-size:0.875rem}}
+/* NPC section review — magazine subhead style */
+.section-npc-review{font-family:var(--font-sans);font-size:0.875rem;color:var(--fg);padding:4px 0 4px 14px;margin-bottom:20px;border-left:2px solid var(--npc-accent,var(--border));line-height:1.6;opacity:0.85}
+.report-stories li{padding:10px 0;border-bottom:1px solid var(--muted);font-size:0.875rem;list-style:none}
+.report-stories li:last-child{border-bottom:none}
+.report-stories strong{display:block;margin-bottom:2px}
+.report-stories span{font-size:0.75rem;color:var(--muted-fg)}
+.trends-list{margin-bottom:24px}
+.trends-list li{padding:5px 0;font-size:0.875rem;list-style:none}
+.trends-list li::before{content:"- ";color:var(--muted-fg)}
+/* Review archive pages */
+.review-list{max-width:800px;margin:0 auto}
+.review-month{margin-bottom:24px}
+.review-month h2{font-size:1rem;color:var(--muted-fg);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px}
+.review-month li{font-size:0.875rem;padding:6px 0;list-style:none;line-height:1.6}
+.review-month li a{color:var(--fg)}.review-month li a:hover{color:var(--accent-game)}
+.review-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;font-size:0.8125rem}
+.review-filters a{padding:4px 12px;border-radius:4px;background:var(--muted);color:var(--muted-fg);text-decoration:none}
+.review-filters a:hover{background:var(--border);color:var(--fg)}
+.review-filters a.active{background:var(--nav-accent);color:#fff}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-brand"><img src="/images/%E5%B0%8F%E7%9F%A5.png" class="nav-brand-icon" alt="">风声驿站NPC</a>
+  <input type="checkbox" id="nav-toggle" class="nav-toggle">
+  <label for="nav-toggle" class="nav-toggle-label" aria-label="菜单"><span></span></label>
+  <div class="nav-links">
+    <a href="/">今日风声</a>
+    <a href="/gaming/">游戏风声</a>
+    <a href="/ai/" class="active">硅基风声</a>
+    <a href="/review/">往期回顾</a>
+    <a href="/search/" aria-label="搜索"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="hero-grid">
+    <div class="hero-main ai">
+      <div class="hero-label">硅基风声 · 2026-06-13</div>
+      <h1 class="hero-headline">Anthropic最强AI惨遭政府拔网线</h1>
+      <p class="hero-overview">今日AI行业监管与资本双重震荡。Anthropic安全警告自食其果，美国政府直接出手暂停其最强模型，引发对AI越狱漏洞和过度宣传的反思。与此同时，SpaceX创纪录IPO推动Musk登顶万亿富豪，AI赛道融资热度不减。Meta内部传员工怒斥AI部门如同“精神劳改营”，大厂AI文化遭拷问。</p>
+    </div>
+    <div class="hero-sidebar">
+      <h3>关键词</h3>
+      <div class="keywords"><a href="/search/?q=Anthropic" class="keyword-tag">Anthropic</a><a href="/search/?q=%E6%94%BF%E5%BA%9C%E7%9B%91%E7%AE%A1" class="keyword-tag">政府监管</a><a href="/search/?q=SpaceX" class="keyword-tag">SpaceX</a><a href="/search/?q=IPO" class="keyword-tag">IPO</a><a href="/search/?q=Meta" class="keyword-tag">Meta</a><a href="/search/?q=%E5%BC%80%E6%BA%90" class="keyword-tag">开源</a><a href="/search/?q=AI%E8%AF%88%E9%AA%97" class="keyword-tag">AI诈骗</a><a href="/search/?q=Mistral" class="keyword-tag">Mistral</a></div>
+    </div>
+  </div>
+
+  <nav class="side-nav"><a href="#sec-0">监管风暴</a>
+<a href="#sec-1">资本狂欢</a>
+<a href="#sec-2">大厂内幕</a>
+<a href="#sec-3">社区热议</a>
+<a href="#npc-review">NPC观点</a>
+<a href="#all-sources">全部资讯源</a>
+</nav>
+
+  
+    <div class="section-header" id="sec-0">
+      <h2 class="section-title">监管风暴</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#7C3AED"><img src="/images/小知.png" class="npc-avatar-sm" alt="小知" loading="lazy"><strong>小知：</strong>Anthropic安全警告反噬，政府真动手了——Fable 5和Mythos 5直接下架。OpenAI也被多州调查。厂商天天喊&#039;安全&#039;，结果搬起石头砸自己脚，监管铁拳先砸最听话的那个。</div>
+    
+      <a href="https://techcrunch.com/2026/06/12/anthropics-safety-warnings-may-have-just-backfired-the-government-has-pulled-the-plug-on-its-most-powerful-ai/" target="_blank" rel="noopener noreferrer" class="card-spotlight ai no-img">
+        
+        <div class="spotlight-text">
+          <div class="card-title">Anthropic安全警告适得其反</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Anthropic’s safety warnings may have just backfired — the government has pulled the plug on its most powerful AI</div>
+          <div class="card-summary">Anthropic的安全警告可能适得其反——政府已叫停其最强AI模型。该公司表示不认同因发现一个狭窄的越狱漏洞就召回已部署给数亿用户的商业模型。</div>
+          <div class="card-meta"><span>TechCrunch AI</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          
+          <h3><a href="https://www.anthropic.com/news/fable-mythos-access" target="_blank" rel="noopener noreferrer">美国政府要求暂停Claude新模型 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">US Government directive to suspend access to Fable 5 and Mythos 5</div>
+          <div class="detail-summary">美国政府指令要求暂停访问Anthropic的Fable和Mythos模型，引发关于AI监管和国际安全的讨论。</div>
+          <div class="detail-source">
+            <span>Hacker News</span>
+            <span>2026-06-13</span>
+            <a href="https://www.anthropic.com/news/fable-mythos-access" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://www.bloomberg.com/news/articles/2026-06-13/openai-probed-by-coalition-of-state-attorneys-general" target="_blank" rel="noopener noreferrer">多位州检察长调查OpenAI <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">OpenAI Probed by Coalition of State Attorneys General</div>
+          <div class="detail-summary">OpenAI正受到美国多州检察长联盟的调查，他们向这家AI公司索取广泛主题的信息。</div>
+          <div class="detail-source">
+            <span>Bloomberg Technology</span>
+            <span>Sat, 13 Ju</span>
+            <a href="https://www.bloomberg.com/news/articles/2026-06-13/openai-probed-by-coalition-of-state-attorneys-general" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/06/12/chinese-cybercrime-operation-that-used-ai-to-scam-hundreds-of-thousands-of-victims-sued-by-google/" target="_blank" rel="noopener noreferrer">谷歌起诉中国AI诈骗团伙 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Chinese cybercrime operation that used AI to scam ‘hundreds of thousands of victims’ sued by Google</div>
+          <div class="detail-summary">谷歌称名为“Outsider Enterprise”的团伙利用AI诈骗数十万受害者，两周内发送250万条短信。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 12 Ju</span>
+            <a href="https://techcrunch.com/2026/06/12/chinese-cybercrime-operation-that-used-ai-to-scam-hundreds-of-thousands-of-victims-sued-by-google/" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-1">
+      <h2 class="section-title">资本狂欢</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#7C3AED"><img src="/images/小知.png" class="npc-avatar-sm" alt="小知" loading="lazy"><strong>小知：</strong>Prometheus融120亿、Mistral估值200亿欧、SpaceX IPO涨19%——钱多到烫手。但全是故事估值，真正能落地赚钱的有几个？MANGOS取代FAANG，不过是新泡沫换旧泡沫。</div>
+    
+      <a href="https://techcrunch.com/2026/06/11/jeff-bezoss-prometheus-raises-12b-to-build-an-artificial-general-engineer-for-the-physical-world/" target="_blank" rel="noopener noreferrer" class="card-spotlight ai no-img">
+        
+        <div class="spotlight-text">
+          <div class="card-title">Bezos的Prometheus融资120亿</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Jeff Bezos’s Prometheus raises $12B to build an ‘artificial general engineer’ for the physical world</div>
+          <div class="card-summary">Jeff Bezos的物理AI初创公司Prometheus筹集120亿美元，估值410亿美元，目标构建“通用人工工程师”自动化重工程和药物设计。</div>
+          <div class="card-meta"><span>TechCrunch AI</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/06/12/mistral-is-rumored-to-be-raising-e3b-at-e20-valuation/" target="_blank" rel="noopener noreferrer">Mistral据传融资30亿欧元 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Mistral is rumored to be raising €3B at €20B valuation</div>
+          <div class="detail-summary">Mistral传闻正以200亿欧元估值融资30亿欧元，估值较C轮117亿欧元接近翻倍。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 12 Ju</span>
+            <a href="https://techcrunch.com/2026/06/12/mistral-is-rumored-to-be-raising-e3b-at-e20-valuation/" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://www.bloomberg.com/news/articles/2026-06-12/spacex-ipo-spcx-prepares-for-debut-after-75-billion-ipo-smashes-record" target="_blank" rel="noopener noreferrer">SpaceX IPO首日收涨19% <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">SpaceX Shares Close 19% Higher After Historic $75 Billion IPO</div>
+          <div class="detail-summary">SpaceX上市首日收盘上涨19%，成为全球最有价值上市公司之一，Elon Musk成为世界首富。</div>
+          <div class="detail-source">
+            <span>Bloomberg Technology</span>
+            <span>Fri, 12 Ju</span>
+            <a href="https://www.bloomberg.com/news/articles/2026-06-12/spacex-ipo-spcx-prepares-for-debut-after-75-billion-ipo-smashes-record" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/06/11/theker-just-raised-85m-to-build-the-factory-robot-that-doesnt-specialize-in-anything/" target="_blank" rel="noopener noreferrer">Theker融资8500万美元 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Theker just raised $85M to build the factory robot that doesn’t specialize in anything</div>
+          <div class="detail-summary">Theker获8500万美元融资，制造可重新配置的工厂机器人，不同于Boston Dynamics等固定形态人形机器人。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 12 Ju</span>
+            <a href="https://techcrunch.com/2026/06/11/theker-just-raised-85m-to-build-the-factory-robot-that-doesnt-specialize-in-anything/" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/podcast/its-hot-ipo-summer-and-the-mangos-are-ripe/" target="_blank" rel="noopener noreferrer">IPO热夏，MANGOS成熟 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">It’s hot IPO summer, and the MANGOS are ripe</div>
+          <div class="detail-summary">IPO市场回归，新缩写MANGOS（Meta/Microsoft、Anthropic、Nvidia、Google、OpenAI、SpaceX）引领潮流。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 12 Ju</span>
+            <a href="https://techcrunch.com/podcast/its-hot-ipo-summer-and-the-mangos-are-ripe/" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-2">
+      <h2 class="section-title">大厂内幕</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#7C3AED"><img src="/images/小知.png" class="npc-avatar-sm" alt="小知" loading="lazy"><strong>小知：</strong>Meta 6500人的AI部门被员工称为&#039;灵魂碾压的古拉格&#039;，SpaceX建了数据中心自己用不了租给Anthropic。大厂资源浪费和管理混乱暴露无遗，打工人被当消耗品。</div>
+    
+      <a href="https://techcrunch.com/2026/06/12/metas-months-old-ai-unit-is-a-soul-crushing-gulag-say-the-engineers-stuck-inside-it/" target="_blank" rel="noopener noreferrer" class="card-spotlight ai no-img">
+        
+        <div class="spotlight-text">
+          <div class="card-title">Meta AI部门被指像古拉格</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Meta’s months-old AI unit is a soul-crushing gulag, say the engineers stuck inside it</div>
+          <div class="card-summary">报道称Meta成立仅数月的AI部门（6500名员工）濒临反抗，工程师称其环境压抑。</div>
+          <div class="card-meta"><span>TechCrunch AI</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          
+          <h3><a href="https://www.bloomberg.com/news/articles/2026-06-12/spacex-rented-out-computing-after-own-teams-had-trouble-using-it" target="_blank" rel="noopener noreferrer">SpaceX因自身使用困难出租算力 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">SpaceX Rented Out Computing After Own Teams Had Trouble Using It</div>
+          <div class="detail-summary">SpaceX在孟菲斯的Colossus 1数据中心开发Grok AI遇到技术挑战，将全部算力出租给Anthropic PBC。</div>
+          <div class="detail-source">
+            <span>Bloomberg Technology</span>
+            <span>Fri, 12 Ju</span>
+            <a href="https://www.bloomberg.com/news/articles/2026-06-12/spacex-rented-out-computing-after-own-teams-had-trouble-using-it" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/06/11/cheaper-faster-and-culturally-aware-avataars-video-ai-is-built-for-indias-scale/" target="_blank" rel="noopener noreferrer">Avataar视频AI为印度规模打造 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Cheaper, faster, and culturally aware, Avataar’s video AI is built for India’s scale</div>
+          <div class="detail-summary">Avataar AI的蒸馏视频模型定价为每生成一秒0.005美元，更便宜、更快且具有文化意识。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 12 Ju</span>
+            <a href="https://techcrunch.com/2026/06/11/cheaper-faster-and-culturally-aware-avataars-video-ai-is-built-for-indias-scale/" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/06/11/deezers-new-tool-can-identify-ai-music-from-spotify-apple-music-and-others/" target="_blank" rel="noopener noreferrer">Deezer推出识别AI音乐工具 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Deezer’s new tool can identify AI music from Spotify, Apple Music, and others</div>
+          <div class="detail-summary">Deezer推出新工具，可扫描Spotify、Apple Music等平台的播放列表，识别AI生成音乐。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Thu, 11 Ju</span>
+            <a href="https://techcrunch.com/2026/06/11/deezers-new-tool-can-identify-ai-music-from-spotify-apple-music-and-others/" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-3">
+      <h2 class="section-title">社区热议</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#7C3AED"><img src="/images/小知.png" class="npc-avatar-sm" alt="小知" loading="lazy"><strong>小知：</strong>开源社区喊&#039;必须赢&#039;，但Hacker News上吵得凶——用户开始反思&#039;什么都扔给ChatGPT&#039;的荒谬。Allen AI开源olmo-eval评估工具算是干货，标准化总比厂商自吹自擂强。</div>
+    
+      <a href="https://opensourceaimustwin.com/?share=v2" target="_blank" rel="noopener noreferrer" class="card-spotlight ai no-img">
+        
+        <div class="spotlight-text">
+          <div class="card-title">开源AI必须胜利</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Open Source AI Must Win</div>
+          <div class="card-summary">讨论开源AI的重要性与必要性，认为开源是AI发展的必由之路，社区观点激烈交锋。</div>
+          <div class="card-meta"><span>Hacker News</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          
+          <h3><a href="https://huggingface.co/blog/allenai/olmo-eval" target="_blank" rel="noopener noreferrer">olmo-eval：模型开发循环评估工作台 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">olmo-eval: An evaluation workbench for the model development loop</div>
+          <div class="detail-summary">发布olmo-eval开源评估工作台，支持在模型开发过程中进行持续、可复现的基准测试，为AI模型迭代提供标准化工具，具有一定方法论价值。</div>
+          <div class="detail-source">
+            <span>HuggingFace Blog</span>
+            <span>Fri, 12 Ju</span>
+            <a href="https://huggingface.co/blog/allenai/olmo-eval" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://correresmidestino.com/dont-you-just-upload-it-to-chatgpt/" target="_blank" rel="noopener noreferrer">“你为什么不直接上传到ChatGPT？” <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">&quot;Don&#039;t You Just Upload It to ChatGPT?&quot;</div>
+          <div class="detail-summary">批评将一切问题丢给ChatGPT的趋势，讨论AI的局限性以及用户对工具的过度依赖。</div>
+          <div class="detail-source">
+            <span>Hacker News</span>
+            <span>2026-06-12</span>
+            <a href="https://correresmidestino.com/dont-you-just-upload-it-to-chatgpt/" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+
+  
+  <div class="npc-commentary" id="npc-review" style="--npc-accent:#7C3AED">
+    <div class="npc-header">
+      <img src="/images/小知.png" class="npc-avatar" alt="小知" loading="lazy">
+      <span class="npc-name">小知</span>
+    </div>
+    <div class="npc-review">Anthropic那套安全话术玩脱了，政府直接拔网线，监管大棒落下来厂商自己先挨打。另一边资本狂欢，Mistral估值翻倍、SpaceX IPO造万亿首富，但Meta内部员工骂AI部门是&#039;精神劳改营&#039;——烧钱竞赛下打工人被榨成渣。开源社区喊出&#039;必须赢&#039;，可算力成本和技术落地依然是空头支票。</div>
+  </div>
+
+  
+  <div class="section-divider"></div>
+  <div class="section-header">
+    <h2 class="section-title" id="all-sources">全部资讯源</h2>
+    <span style="font-size:0.75rem;color:var(--muted-fg)">18 个来源 · 各取 3 条</span>
+  </div>
+  <div class="sources-grid">
+        <div class="brief-item">
+          <h4><a href="https://status.claude.com/incidents/s9w82lp9dcn9" target="_blank" rel="noopener noreferrer">Anthropic暂停Claude新模型访问 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Hacker News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://techcrunch.com/2026/06/11/spacex-officially-prices-shares-at-135-in-the-largest-ipo-ever/" target="_blank" rel="noopener noreferrer">SpaceX以135美元定价史上最大IPO <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">TechCrunch AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://techcrunch.com/2026/06/12/spacex-ipo-live-updates-on-everything-you-need-to-know/" target="_blank" rel="noopener noreferrer">SpaceX IPO实时更新 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">TechCrunch AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.bloomberg.com/news/videos/2026-06-12/class-v-group-founder-analyzes-unique-spacex-s-ipo-video" target="_blank" rel="noopener noreferrer">分析师解读SpaceX破纪录IPO <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Bloomberg Technology</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://developer.nvidia.com/blog/nvidia-achieves-leading-agentic-coding-performance-on-first-agentic-ai-benchmark/" target="_blank" rel="noopener noreferrer">NVIDIA在首个AI Agent编码基准中领先 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">NVIDIA AI Blog</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://techcrunch.com/video/spacex-anthropic-and-openais-hot-ipo-summer/" target="_blank" rel="noopener noreferrer">SpaceX等引领IPO热夏 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">TechCrunch AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://developer.nvidia.com/blog/deploy-long-context-reasoning-and-agentic-workflows-with-minimax-m3-on-nvidia-accelerated-infrastructure/" target="_blank" rel="noopener noreferrer">MiniMax M3长上下文推理与Agent工作流 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">NVIDIA AI Blog</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.bloomberg.com/news/videos/2026-06-12/wall-street-week-google-s-ai-bet-world-cup-backlash-video" target="_blank" rel="noopener noreferrer">华尔街周：SpaceX上市等 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Bloomberg Technology</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.bloomberg.com/news/videos/2026-06-12/the-close-6-12-2026-video" target="_blank" rel="noopener noreferrer">SpaceX上市首日大涨 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Bloomberg Technology</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://36kr.com/p/3851015329027336?f=rss" target="_blank" rel="noopener noreferrer">突发！Anthropic全球停用Claude 5 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">36氪 AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.tmtpost.com/8026291.html" target="_blank" rel="noopener noreferrer">“润华系”交班加速，润华保险股权收拢 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">钛媒体 AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.tmtpost.com/8026324.html" target="_blank" rel="noopener noreferrer">市值2万亿美元，一直发射一直炸的SpaceX，怎么成了史上最大IPO? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">钛媒体 AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.tmtpost.com/8026290.html" target="_blank" rel="noopener noreferrer">大疆、影石急眼了：诉讼对轰，产品全线“交火” <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">钛媒体 AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://wallstreetcn.com/articles/3774544" target="_blank" rel="noopener noreferrer">2万亿巨头来了！SpaceX首秀收涨19%，超3500亿美元疯抢史上最大IPO <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">华尔街见闻</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://wallstreetcn.com/articles/3774481" target="_blank" rel="noopener noreferrer">美伊协议曙光重燃，原油两连跌，美股指全线收涨、债汇承压，SpaceX首日大涨19% <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">华尔街见闻</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://wallstreetcn.com/articles/3774508" target="_blank" rel="noopener noreferrer">SK海力士、三星、台积电同时被限！华尔街大行限制对冲基金对亚洲芯片股的杠杆押注 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">华尔街见闻</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.cls.cn/detail/2398625" target="_blank" rel="noopener noreferrer">165天！长鑫科技IPO注册生效 科创板迎来国产DRAM龙头 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">财联社热门</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.cls.cn/detail/2398916" target="_blank" rel="noopener noreferrer">美股收盘：SpaceX首秀升19%市值破2万亿 三大指数集体上涨 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">财联社热门</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.cls.cn/detail/2398836" target="_blank" rel="noopener noreferrer">中国软件因恶意串通被禁止参加政府采购活动一年|速读公告 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">财联社热门</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://ikyle.me/blog/2026/how-to-setup-a-local-coding-agent-on-macos" target="_blank" rel="noopener noreferrer">macOS本地编码代理设置 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Hacker News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://36kr.com/p/3850904887268611?f=rss" target="_blank" rel="noopener noreferrer">36氪首发 | 核心材料成本降至进口材料五分之一，电致变色技术厂商获投，车规级产线建设中 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">36氪 AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://36kr.com/p/3850902095336449?f=rss" target="_blank" rel="noopener noreferrer">SpaceX 2万亿美元市值这一夜，回望中国商业航天十年冷暖 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">36氪 AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://github.com/maziyarpanahi/openmed" target="_blank" rel="noopener noreferrer">OpenMed开源医疗AI <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">GitHub Trending (RSS)</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.technologyreview.com/2026/06/12/1138899/the-download-reprogramming-reverse-aging-interoception/" target="_blank" rel="noopener noreferrer">The Download: “reprogramming” aging, and the hidde <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">MIT Tech Review AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.technologyreview.com/2026/06/12/1138518/you-do-your-own-time-fiction/" target="_blank" rel="noopener noreferrer">You do your own time <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">MIT Tech Review AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.schneier.com/blog/archives/2026/06/friday-squid-blogging-squid-inspired-fluid-pump.html" target="_blank" rel="noopener noreferrer">Friday Squid Blogging: Squid-Inspired Fluid Pump <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Schneier on Security</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.technologyreview.com/2026/06/12/1138829/reprogramming-buzziest-approach-reversing-aging-right-now/" target="_blank" rel="noopener noreferrer">Why “reprogramming” is the buzziest approach to re <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">MIT Tech Review AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.qbitai.com/2026/06/435321.html" target="_blank" rel="noopener noreferrer">神了，世界杯第一天真按千问剧本踢了 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">量子位</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.theverge.com/podcast/949079/siri-ai-good-vergecast" target="_blank" rel="noopener noreferrer">Siri is good now?? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">The Verge AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.theverge.com/business/948996/spacex-ipo-elon-musk" target="_blank" rel="noopener noreferrer">SpaceX’s massive IPO: all the latest news <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">The Verge AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.theverge.com/ai-artificial-intelligence/949005/jeff-bezos-prometheus-artificial-general-engineer" target="_blank" rel="noopener noreferrer">Jeff Bezos’ AI startup aims to build an ‘artificia <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">The Verge AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.quantamagazine.org/where-did-earth-get-its-oceans-maybe-it-made-them-itself-20260612/" target="_blank" rel="noopener noreferrer">地球海洋从何而来？或许自产 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Quanta Magazine</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://developer.nvidia.com/blog/one-click-multi-tenant-security-with-nvidia-quantum-infiniband/" target="_blank" rel="noopener noreferrer">NVIDIA InfiniBand多租户安全一键配置 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">NVIDIA AI Blog</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.ft.com/content/7ffcace7-9dc0-4e7e-9912-895ac073f979" target="_blank" rel="noopener noreferrer">Palantir在瑞士败诉 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Hacker News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://openai.com/index/academy-courses-applying-ai-at-work" target="_blank" rel="noopener noreferrer">New OpenAI Academy courses for the next era of wor <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">OpenAI Blog</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.qbitai.com/2026/06/435196.html" target="_blank" rel="noopener noreferrer">千里收购了一家毫米波雷达公司 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">量子位</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.qbitai.com/2026/06/435192.html" target="_blank" rel="noopener noreferrer">耐心资本护航创新，2026SuperLink开启创投价值共生新时代 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">量子位</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://arxiv.org/abs/2606.12451" target="_blank" rel="noopener noreferrer">工具感知：审计LLM工具知识框架 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">arXiv AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://arxiv.org/abs/2606.12563" target="_blank" rel="noopener noreferrer">Arbor：树搜索作为自主智能体认知层 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">arXiv AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://arxiv.org/abs/2606.12587" target="_blank" rel="noopener noreferrer">AI智能体的战略决策支持 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">arXiv AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://github.com/addyosmani/agent-skills" target="_blank" rel="noopener noreferrer">AI编码代理技能库 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">GitHub Trending (RSS)</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://github.com/obra/superpowers" target="_blank" rel="noopener noreferrer">Superpowers智能体技能框架 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">GitHub Trending (RSS)</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://openai.com/index/preply" target="_blank" rel="noopener noreferrer">Preply结合AI与真人教师个性化学习 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">OpenAI Blog</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.nature.com/articles/d41586-026-01911-z" target="_blank" rel="noopener noreferrer">为何人类渴望飞行：书评 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Nature</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.nature.com/articles/d41586-026-01912-y" target="_blank" rel="noopener noreferrer">简报：巨石阵中央石史诗旅程 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Nature</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.nature.com/articles/d41586-026-01876-z" target="_blank" rel="noopener noreferrer">我为教廷和联合国提供AI建议——别忽视教皇的讯息 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Nature</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.producthunt.com/products/basedash" target="_blank" rel="noopener noreferrer">Slack Data Agent <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Product Hunt AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.producthunt.com/products/qursor" target="_blank" rel="noopener noreferrer">Qursor <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Product Hunt AI</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.producthunt.com/products/locin-ai" target="_blank" rel="noopener noreferrer">LocIn AI <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Product Hunt AI</span>
+        </div></div>
+
+  
+</div>
+<script>
+(function(){
+  const links=document.querySelectorAll('.side-nav a');
+  const sections=[...links].map(l=>document.getElementById(l.getAttribute('href').slice(1))).filter(Boolean);
+  if(!sections.length)return;
+  const observer=new IntersectionObserver((entries)=>{
+    let active=null;
+    entries.forEach(e=>{if(e.isIntersecting)active=e.target.id});
+    if(active) links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+active));
+  },{rootMargin:'-20% 0px -70% 0px'});
+  sections.forEach(s=>observer.observe(s));
+})();
+</script>
+
+<footer class="footer">
+  风声驿站NPC · <a href="/rss.xml">RSS <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></a> · <a href="https://github.com">GitHub</a>
+  
+</footer>
+</body>
+</html>

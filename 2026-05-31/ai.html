@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>硅基风声 — 风声驿站NPC</title>
+<style>
+:root {
+  --bg: #EEE6CB; --fg: #2C2C2C;
+  --card: #FFFDF7; --card-fg: #2C2C2C;
+  --muted: #E8E2D2; --muted-fg: #6B6558;
+  --border: #D4CEBB;
+  --nav-accent: #B73F42;
+  --accent-ai: #82B29B; --accent-ai-hover: #6B9E85;
+  --accent-game: #DE9960; --accent-game-hover: #C8854A;
+  --destructive: #B73F42;
+  --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1E1B18; --fg: #EEE6CB;
+    --card: #292420; --card-fg: #EEE6CB;
+    --muted: #332E28; --muted-fg: #A09880;
+    --border: #4A4038;
+    --nav-accent: #C85A5D;
+    --accent-ai: #6B9E85; --accent-ai-hover: #82B29B;
+    --accent-game: #E8B080; --accent-game-hover: #DE9960;
+  }
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--fg);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}a:hover{text-decoration:underline}
+a:focus-visible{outline:2px solid var(--accent-game);outline-offset:2px;border-radius:2px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent-game);outline-offset:2px}
+
+/* Navigation */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:64px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:10}
+.nav-brand{font-size:1.125rem;font-weight:700;letter-spacing:-0.02em;display:flex;align-items:center;gap:6px}
+.nav-brand-icon{width:20px;height:20px;border-radius:6px;background:var(--accent-game);opacity:0.85}
+.nav-links{display:flex;gap:20px;font-size:0.875rem;font-weight:500}
+.nav-links a{color:var(--muted-fg);transition:color 0.15s;padding:8px 2px;border-bottom:2px solid transparent;min-height:44px;display:inline-flex;align-items:center}
+.nav-links a:hover,.nav-links a.active{color:var(--fg);text-decoration:none;border-bottom-color:var(--nav-accent);font-weight:600}
+
+/* Layout */
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.hero-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:32px}
+@media(max-width:768px){.hero-grid{grid-template-columns:1fr}}
+
+/* Hero - left */
+.hero-main{border-left:4px solid var(--accent-game);padding-left:20px}
+.hero-main.ai{border-left-color:var(--accent-ai)}
+.hero-label{font-size:0.75rem;color:var(--muted-fg);margin-bottom:8px;font-weight:500;letter-spacing:0.04em}
+.hero-headline{font-size:1.75rem;font-weight:600;line-height:1.25;margin-bottom:12px}
+.hero-headline a{color:var(--fg)}
+.hero-overview{font-size:0.9375rem;color:var(--muted-fg);line-height:1.6;max-width:65ch;margin-bottom:16px}
+.hero-actions{display:flex;gap:16px;font-size:0.8125rem;font-weight:500}
+.hero-actions a{display:inline-flex;align-items:center;gap:4px}
+.hero-actions .game-link{color:var(--accent-game)}
+.hero-actions .ai-link{color:var(--accent-ai)}
+
+/* Hero sub-cards */
+.hero-sub-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.hero-sub-card{padding:10px 12px;background:var(--muted);border-radius:6px;font-size:0.8125rem;line-height:1.4}
+.hero-sub-card .sub-title{font-weight:500;margin-bottom:2px}
+.hero-sub-card .sub-meta{font-size:0.6875rem;color:var(--muted-fg)}
+
+/* Hero - right sidebar */
+.hero-sidebar{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px}
+.hero-sidebar h3{font-size:0.8125rem;font-weight:600;margin-bottom:14px;color:var(--muted-fg);letter-spacing:0.03em}
+.hero-sidebar li{font-size:0.8125rem;line-height:1.5;padding:7px 0;border-bottom:1px solid var(--muted);list-style:none}
+.hero-sidebar li:last-child{border-bottom:none}
+.hero-sidebar li .source-tag{display:inline-block;font-size:0.6875rem;color:var(--muted-fg);margin-top:2px}
+
+/* Section header */
+.section-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:20px}
+.section-title{font-size:1.125rem;font-weight:600}
+.section-link{font-size:0.8125rem;color:var(--muted-fg);display:inline-flex;align-items:center;gap:3px}
+.section-link:hover{color:var(--fg)}
+
+/* Card grid */
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:36px}
+@media(max-width:768px){.card-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.card-grid{grid-template-columns:1fr}}
+
+/* Magazine cards: no shadows, thin borders, 3-tier hierarchy */
+.card{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent-game);border-radius:0 4px 4px 0;padding:14px 16px;transition:border-color 0.15s;display:block}
+.card:hover{border-color:var(--accent-game-hover);text-decoration:none}
+.card.ai{border-left-color:var(--accent-ai)}
+.card.ai:hover{border-left-color:var(--accent-ai-hover)}
+.card-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px;background:var(--muted)}
+/* Hero card (span-2, large headline) */
+.card-hero{grid-column:span 2;grid-row:span 2;padding:20px 24px}
+.card-hero .card-title{font-size:1.5rem;line-height:1.2;-webkit-line-clamp:3}
+.card-hero .card-summary{font-size:0.9375rem;-webkit-line-clamp:3}
+/* Brief card (text-only, compact) */
+.card-brief{border-left-width:2px;padding:8px 12px}
+.card-brief .card-title{font-size:0.8125rem;-webkit-line-clamp:1}
+.card-title{font-size:0.9375rem;font-weight:600;line-height:1.3;margin:0 0 6px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--fg);letter-spacing:-0.01em}
+.card-summary{font-size:0.8125rem;color:var(--muted-fg);line-height:1.45;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.card-subtitle{font-size:0.6875rem;color:var(--muted-fg);margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-size:0.6875rem;color:var(--muted-fg);display:flex;align-items:center;gap:6px;font-family:var(--font-mono);letter-spacing:0.02em}
+.card-meta a{color:var(--muted-fg);display:inline-flex;align-items:center;gap:2px}
+.card-meta a:hover{color:var(--fg)}
+/* Section divider: thin border-t, newspaper-style */
+.section-divider{border-top:1px solid var(--border);margin:24px 0;padding-top:20px}
+
+/* Article detail (专题页) */
+.article-detail{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent-game);border-radius:0 4px 4px 0;padding:16px 20px;transition:border-color 0.15s}
+.article-detail:hover{border-color:var(--accent-game)}
+.article-detail:last-child{margin-bottom:0}
+.article-detail h3{font-size:1rem;font-weight:500;margin-bottom:6px;line-height:1.4}
+.article-detail h3 a{color:var(--fg)}
+.article-detail .detail-summary{font-size:0.875rem;color:var(--muted-fg);line-height:1.55;margin-bottom:8px}
+.article-detail .detail-source{font-size:0.75rem;color:var(--muted-fg);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.article-detail .detail-source a{color:var(--muted-fg);display:inline-flex;align-items:center;gap:2px;font-size:0.6875rem}
+.article-detail .detail-source a:hover{color:var(--fg)}
+
+/* More grid */
+.more-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:32px}
+@media(max-width:768px){.more-grid{grid-template-columns:1fr}}
+.more-section h4{font-size:0.875rem;font-weight:600;margin-bottom:10px}
+.more-list li{font-size:0.8125rem;padding:5px 0;border-bottom:1px solid var(--muted);list-style:none}
+.more-list li:last-child{border-bottom:none}
+.more-list .src{color:var(--muted-fg);font-size:0.6875rem}
+
+/* Keyword tags */
+.keywords{display:flex;flex-wrap:wrap;gap:6px}
+.keyword-tag{display:inline-block;background:var(--muted);color:var(--muted-fg);border-radius:4px;padding:3px 10px;font-size:0.75rem;transition:background 0.15s}
+.keyword-tag:hover{background:var(--border);color:var(--fg);text-decoration:none}
+
+/* Editor note */
+.editor-note{background:var(--muted);border-radius:8px;padding:18px 22px;margin:28px 0;font-size:0.875rem;color:var(--muted-fg);line-height:1.65;border-left:3px solid var(--border)}
+/* Detail cards: 2-column grid for secondary/tertiary */
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+@media(max-width:768px){.detail-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.detail-grid{grid-template-columns:1fr}}
+/* Tertiary text-only cards: bold title, text 60%+ */
+.detail-tertiary{border-left:4px solid var(--muted);padding:14px 18px;min-height:80px;display:flex;flex-direction:column;justify-content:center}
+.detail-tertiary h3{font-size:1.0625rem;line-height:1.35;-webkit-line-clamp:3}
+.detail-tertiary .detail-summary{display:none}
+.detail-tertiary .detail-source{font-size:0.6875rem;margin-top:4px}
+/* Spotlight card: left-image-right-text */
+.card-spotlight{display:grid;grid-template-columns:7fr 5fr;gap:20px;align-items:center;padding:0;border-left:4px solid var(--accent-game);overflow:hidden}
+.card-spotlight.ai{border-left-color:var(--accent-ai)}
+.card-spotlight .spotlight-img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:0;margin:0;display:block}
+.card-spotlight .spotlight-text{padding:20px 20px 20px 0}
+.card-spotlight .spotlight-text .card-title{font-size:1.5rem;line-height:1.2;-webkit-line-clamp:3}
+.card-spotlight .spotlight-text .card-summary{font-size:0.9375rem;-webkit-line-clamp:4}
+@media(max-width:640px){.card-spotlight{grid-template-columns:1fr;gap:0}
+.card-spotlight .spotlight-text{padding:16px}}
+/* No-image spotlight: text-dominant */
+.card-spotlight.no-img{grid-template-columns:1fr;padding:28px 32px;min-height:200px}
+.card-spotlight.no-img .spotlight-text .card-title{font-size:1.75rem;-webkit-line-clamp:4}
+.card-spotlight.no-img .spotlight-text .card-summary{font-size:1rem;-webkit-line-clamp:6}
+/* Side navigation */
+.side-nav{position:fixed;right:max(24px,calc((100vw - 1200px)/2 - 180px));top:100px;width:150px;z-index:5}
+@media(max-width:1100px){.side-nav{display:none}}
+.side-nav a{display:block;padding:6px 10px;font-size:0.75rem;color:var(--muted-fg);border-left:2px solid transparent;transition:color 0.15s,border-color 0.15s;text-decoration:none}
+.side-nav a:hover,.side-nav a.active{color:var(--fg);border-left-color:var(--nav-accent)}
+
+/* Footer */
+.footer{border-top:1px solid var(--border);padding:24px;font-size:0.75rem;color:var(--muted-fg);text-align:center;line-height:1.8}
+.footer a{color:var(--muted-fg)}
+.footer a:hover{color:var(--fg)}
+.footer-weekly{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:0.8125rem}
+.footer-weekly a{font-weight:500}
+.footer-weekly .game-link{color:var(--accent-game)}
+.footer-weekly .ai-link{color:var(--accent-ai)}
+
+/* Weekly/Monthly report */
+.report-header{margin-bottom:24px}
+.report-header h1{font-size:1.5rem;font-weight:600;margin-bottom:8px}
+.report-header .period{font-size:0.8125rem;color:var(--muted-fg)}
+.report-stories{margin-bottom:24px}
+.report-stories li{padding:10px 0;border-bottom:1px solid var(--muted);font-size:0.875rem;list-style:none}
+.report-stories li:last-child{border-bottom:none}
+.report-stories strong{display:block;margin-bottom:2px}
+.report-stories span{font-size:0.75rem;color:var(--muted-fg)}
+.trends-list{margin-bottom:24px}
+.trends-list li{padding:5px 0;font-size:0.875rem;list-style:none}
+.trends-list li::before{content:"- ";color:var(--muted-fg)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-brand"><div class="nav-brand-icon"></div>风声驿站NPC</a>
+  <div class="nav-links">
+    <a href="/">今日风声</a>
+    <a href="/gaming/">游戏风声</a>
+    <a href="/ai/" class="active">硅基风声</a>
+    <a href="/review/">往期回顾</a>
+    <a href="/search/" aria-label="搜索"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="hero-grid">
+    <div class="hero-main ai">
+      <div class="hero-label">硅基风声 · 2026-05-31</div>
+      <h1 class="hero-headline">OpenAI推出生物防御AI模型</h1>
+      <p class="hero-overview">今日AI行业聚焦于AI在生物安全与太空智驾等垂直领域的深度应用。OpenAI发布Rosalind Biodefense，标志着AI正式进入生物防御领域。同时，太空智驾概念兴起，卫星自主决策成为新趋势。资本市场方面，软银宣布在法国投资750亿欧元建设AI设施，显示全球AI基础设施竞赛持续升温。国内，吉利辅助驾驶团队整合至千里科技，汽车智能化竞争加剧。</p>
+    </div>
+    <div class="hero-sidebar">
+      <h3>关键词</h3>
+      <div class="keywords"><a href="/search/?q=OpenAI" class="keyword-tag">OpenAI</a><a href="/search/?q=Rosalind" class="keyword-tag">Rosalind</a><a href="/search/?q=%E7%94%9F%E7%89%A9%E9%98%B2%E5%BE%A1" class="keyword-tag">生物防御</a><a href="/search/?q=%E5%A4%AA%E7%A9%BA%E6%99%BA%E9%A9%BE" class="keyword-tag">太空智驾</a><a href="/search/?q=%E8%BD%AF%E9%93%B6" class="keyword-tag">软银</a><a href="/search/?q=AI%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD" class="keyword-tag">AI基础设施</a><a href="/search/?q=%E5%90%89%E5%88%A9" class="keyword-tag">吉利</a><a href="/search/?q=%E5%8D%83%E9%87%8C%E7%A7%91%E6%8A%80" class="keyword-tag">千里科技</a><a href="/search/?q=%E8%BD%BD%E4%BA%BA%E8%88%AA%E5%A4%A9" class="keyword-tag">载人航天</a><a href="/search/?q=AI%E7%AE%97%E5%8A%9B" class="keyword-tag">AI算力</a></div>
+    </div>
+  </div>
+
+  <nav class="side-nav"><a href="#sec-ai-wire">通讯社</a>
+<a href="#sec-ai-industry-media">行业媒体</a>
+<a href="#sec-ai-community">社区讨论</a>
+<a href="#sec-ai-business">产品与商业</a>
+<a href="#sec-ai-blog">官方博客</a>
+</nav>
+
+  
+    <div class="section-header" id="sec-ai-wire">
+      <h3 class="section-title">通讯社</h3>
+    </div>
+    
+      <a href="https://techcrunch.com/2026/05/28/anthropic-raises-65-billion-nears-1t-valuation-ahead-of-ipo/" target="_blank" rel="noopener" class="card-spotlight ai no-img">
+        
+        <div class="spotlight-text">
+          <div class="card-title">Anthropic融资650亿美元估值近万亿</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Anthropic raises $65 billion, nears $1T valuation ahead of IPO</div>
+          <div class="card-summary">Anthropic完成650亿美元H轮融资，投后估值9650亿美元，这可能是其IPO前的最后一轮私募融资。</div>
+          <div class="card-meta"><span>TechCrunch AI</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/05/30/softbank-says-it-will-invest-up-to-e75-billion-to-build-french-data-centers/" target="_blank" rel="noopener">软银750亿欧元建法国数据中心 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">SoftBank says it will invest up to €75 billion to build French data centers</div>
+          <div class="detail-summary">软银宣布将投资高达750亿欧元在法国建设数据中心，目标开发和运营高达5吉瓦的额外数据中心容量。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Sat, 30 Ma</span>
+            <a href="https://techcrunch.com/2026/05/30/softbank-says-it-will-invest-up-to-e75-billion-to-build-french-data-centers/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/05/30/what-a-joke-github-copilots-new-token-based-billing-spurs-consternation-among-devs/" target="_blank" rel="noopener">GitHub Copilot新计费引开发者不满 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">‘What a joke’: Github Copilot’s new token-based billing spurs consternation among devs</div>
+          <div class="detail-summary">微软GitHub Copilot新的基于token的计费模式引发开发者强烈不满，有评论称“真是个笑话”，标志着其黄金时代可能结束。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Sat, 30 Ma</span>
+            <a href="https://techcrunch.com/2026/05/30/what-a-joke-github-copilots-new-token-based-billing-spurs-consternation-among-devs/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/05/29/coders-are-refusing-to-work-without-ai-and-that-could-come-back-to-bite-them/" target="_blank" rel="noopener">程序员拒绝无AI工作或埋下隐患 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Coders are refusing to work without AI — and that could come back to bite them </div>
+          <div class="detail-summary">研究人员警告，虽然AI帮助程序员更快编写代码，但可能并未生成更优代码，长期来看可能给程序员带来问题。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://techcrunch.com/2026/05/29/coders-are-refusing-to-work-without-ai-and-that-could-come-back-to-bite-them/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/05/29/after-nvidias-20b-not-acqui-hire-ai-chip-startup-groq-reportedly-raising-650m/" target="_blank" rel="noopener">AI芯片公司Groq据报融资6.5亿美元 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">After Nvidia’s $20B not-acqui-hire, AI chip startup Groq reportedly raising $650M</div>
+          <div class="detail-summary">在英伟达200亿美元非收购式招聘后，AI芯片初创公司Groq正寻求内部融资6.5亿美元，从硬件转向AI推理领域。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://techcrunch.com/2026/05/29/after-nvidias-20b-not-acqui-hire-ai-chip-startup-groq-reportedly-raising-650m/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/05/29/xcena-secures-135m-at-570m-valuation-betting-on-memory-as-ais-real-bottleneck/" target="_blank" rel="noopener">韩国芯片公司XCENA融资1.35亿美元 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">This chip startup just raised $135M on a bet that AI’s biggest bottleneck isn’t compute — it’s memory</div>
+          <div class="detail-summary">韩国芯片初创公司XCENA获得1.35亿美元融资，押注AI的真正瓶颈是内存而非算力。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://techcrunch.com/2026/05/29/xcena-secures-135m-at-570m-valuation-betting-on-memory-as-ais-real-bottleneck/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/05/28/gleans-top-line-crosses-300m-as-ai-budget-cutting-becomes-its-major-selling-point/" target="_blank" rel="noopener">企业AI搜索公司Glean营收突破3亿美元 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Glean’s top line crosses $300M as AI budget cutting becomes its major selling point</div>
+          <div class="detail-summary">企业AI搜索初创公司Glean年收入增长两倍突破3亿美元，即使科技巨头进入该领域，其核心卖点是帮助客户削减AI预算。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://techcrunch.com/2026/05/28/gleans-top-line-crosses-300m-as-ai-budget-cutting-becomes-its-major-selling-point/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/05/28/the-internet-is-being-rebuilt-for-machines/" target="_blank" rel="noopener">互联网正为机器重建 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">The internet is being rebuilt for machines</div>
+          <div class="detail-summary">随着AI代理从实验走向生产，AWS、Cloudflare等公司正在重新设计云基础设施，以适应机器生成流量主导的未来。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Thu, 28 Ma</span>
+            <a href="https://techcrunch.com/2026/05/28/the-internet-is-being-rebuilt-for-machines/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/05/30/meta-is-reportedly-developing-an-ai-pendant/" target="_blank" rel="noopener">Meta据报开发AI挂件 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Meta is reportedly developing an AI pendant</div>
+          <div class="detail-summary">据报道，Meta正在开发一款AI挂件，表明该公司在AI驱动硬件领域下大赌注。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Sat, 30 Ma</span>
+            <a href="https://techcrunch.com/2026/05/30/meta-is-reportedly-developing-an-ai-pendant/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/05/30/i-put-googles-24-7-ai-assistant-gemini-spark-to-work-and-its-actually-pretty-useful/" target="_blank" rel="noopener">谷歌Gemini Spark助手实测有用 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">I put Google’s 24/7 AI assistant Gemini Spark to work, and it’s actually pretty useful</div>
+          <div class="detail-summary">谷歌24/7 AI助手Gemini Spark可自动处理收件箱摘要、本地活动规划等日常任务，但将其作为独立产品推出的理由尚不明确。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Sat, 30 Ma</span>
+            <a href="https://techcrunch.com/2026/05/30/i-put-googles-24-7-ai-assistant-gemini-spark-to-work-and-its-actually-pretty-useful/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/video/what-happens-when-companies-become-too-ai-pilled/" target="_blank" rel="noopener">公司过度依赖AI的后果 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">What happens when companies become too AI-pilled?</div>
+          <div class="detail-summary">Box创始人Aaron Levie指出，决定AI可以取代你工作的人，往往最不了解你工作的真正内容。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://techcrunch.com/video/what-happens-when-companies-become-too-ai-pilled/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://techcrunch.com/2026/05/29/cognitions-scott-wu-says-ai-coding-agents-shouldnt-replace-humans/" target="_blank" rel="noopener">Cognition CEO：AI编程代理不应取代人类 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Cognition’s Scott Wu says AI coding agents shouldn’t replace humans</div>
+          <div class="detail-summary">Cognition公司创始人Scott Wu表示，其AI编程代理Devin并非设计来取代人类程序员，而是辅助工具。</div>
+          <div class="detail-source">
+            <span>TechCrunch AI</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://techcrunch.com/2026/05/29/cognitions-scott-wu-says-ai-coding-agents-shouldnt-replace-humans/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    <div class="section-header" id="sec-ai-industry-media">
+      <h3 class="section-title">行业媒体</h3>
+    </div>
+    
+      <a href="https://aiweekly.co/issues/ais-labor-war-just-went-global" target="_blank" rel="noopener" class="card-spotlight ai no-img">
+        
+        <div class="spotlight-text">
+          <div class="card-title">AI劳工冲突全球化</div>
+          <div class="card-subtitle" style="margin-bottom:8px">AI Weekly Issue #497: AI&#039;s labor war just went global</div>
+          <div class="card-summary">AI与就业的冲突本周在四个司法管辖区同时爆发，维基百科编辑组织罢工抗议裁员，亚马逊员工利用系统漏洞。标志AI对劳动力市场的冲击已从理论讨论进入实质对抗阶段。</div>
+          <div class="card-meta"><span>AI Weekly</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="section-header" id="sec-ai-community">
+      <h3 class="section-title">社区讨论</h3>
+    </div>
+    
+      <a href="https://www.brethorsting.com/blog/2026/05/domain-expertise-has-always-been-the-real-moat/" target="_blank" rel="noopener" class="card-spotlight ai no-img">
+        
+        <div class="spotlight-text">
+          <div class="card-title">领域专长才是真正的护城河</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Domain expertise has always been the real moat</div>
+          <div class="card-summary">强调在AI时代，深厚的领域知识比技术本身更具竞争壁垒，引发对AI替代性的深度反思。</div>
+          <div class="card-meta"><span>Hacker News</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          
+          <h3><a href="https://blog.tymscar.com/posts/v100localllm/" target="_blank" rel="noopener">200英镑将数据中心GPU装入游戏PC <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">I Put a Datacenter GPU in My Gaming PC for £200</div>
+          <div class="detail-summary">作者以200英镑购入数据中心级GPU并成功改装至游戏PC，引发对性价比和DIY可行性的热议。</div>
+          <div class="detail-source">
+            <span>Hacker News</span>
+            <span>2026-05-31</span>
+            <a href="https://blog.tymscar.com/posts/v100localllm/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://www.vox.com/future-perfect/489976/ai-successionism-transhumanism-posthumanism" target="_blank" rel="noopener">真正希望AI取代人类的人 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">The people who actually want AI to replace humanity</div>
+          <div class="detail-summary">探讨部分群体积极推动AI取代人类的原因，涉及技术乌托邦与人类价值冲突的争议。</div>
+          <div class="detail-source">
+            <span>Hacker News</span>
+            <span>2026-05-31</span>
+            <a href="https://www.vox.com/future-perfect/489976/ai-successionism-transhumanism-posthumanism" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://thoughts.hmmz.org/2026-05-31.html" target="_blank" rel="noopener">取消AI订阅或许是解药 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">The solution might be cancelling my AI subscription</div>
+          <div class="detail-summary">讨论认为取消AI订阅可减少依赖，回归手动解决问题，反思AI工具的实际价值与成本。</div>
+          <div class="detail-source">
+            <span>Hacker News</span>
+            <span>2026-05-31</span>
+            <a href="https://thoughts.hmmz.org/2026-05-31.html" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://blog.nlnetlabs.nl/one-year-of-roto-the-compiled-scripting-language-for-rust/" target="_blank" rel="noopener">Roto一周年：Rust编译脚本语言 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">One year of Roto, a compiled scripting language for Rust</div>
+          <div class="detail-summary">Roto作为Rust生态的编译脚本语言，发布一年后因其性能与易用性获得开发者关注。</div>
+          <div class="detail-source">
+            <span>Hacker News</span>
+            <span>2026-05-29</span>
+            <a href="https://blog.nlnetlabs.nl/one-year-of-roto-the-compiled-scripting-language-for-rust/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    <div class="section-header" id="sec-ai-business">
+      <h3 class="section-title">产品与商业</h3>
+    </div>
+    
+      <a href="https://www.qbitai.com/2026/05/427104.html" target="_blank" rel="noopener" class="card-spotlight ai no-img">
+        
+        <div class="spotlight-text">
+          <div class="card-title">DDIM之父宋佳铭，宣布离职</div>
+          <div class="card-subtitle" style="margin-bottom:8px">DDIM之父宋佳铭，宣布离职</div>
+          <div class="card-summary">新的浪潮，还在继续往前推</div>
+          <div class="card-meta"><span>量子位</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.qbitai.com/2026/05/427005.html" target="_blank" rel="noopener">别光给Agent加Tool了，它根本选不明白！复旦×通义提出全新CUA训练范式 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>量子位</span>
+            <span>Sun, 31 Ma</span>
+          </div>
+        </div>
+
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.qbitai.com/2026/05/426991.html" target="_blank" rel="noopener">英伟达版「MacBook Pro」曝光：老黄自研了CPU！ <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>量子位</span>
+            <span>Sun, 31 Ma</span>
+          </div>
+        </div>
+
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.qbitai.com/2026/05/426984.html" target="_blank" rel="noopener">机器人原生世界动作模型问世！首创时空一体架构，复旦系团队出品 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>量子位</span>
+            <span>Sun, 31 Ma</span>
+          </div>
+        </div>
+
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.qbitai.com/2026/05/426970.html" target="_blank" rel="noopener">Token贵只因你喂给模型的垃圾太多了丨@亚马逊王晓野AIGC2026 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>量子位</span>
+            <span>Sun, 31 Ma</span>
+          </div>
+        </div>
+
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.qbitai.com/2026/05/426832.html" target="_blank" rel="noopener">τ0-WM：最大规模预训练的开源具身世界模型来了 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>量子位</span>
+            <span>Sun, 31 Ma</span>
+          </div>
+        </div>
+
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.qbitai.com/2026/05/426819.html" target="_blank" rel="noopener">AI原生时代下，让世界适应Agent，而非教AI做人 | 港大黄超@AIGC2026 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>量子位</span>
+            <span>Sun, 31 Ma</span>
+          </div>
+        </div>
+
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.qbitai.com/2026/05/426793.html" target="_blank" rel="noopener">从Token无上限到全员Agent：MiniMax的AI Native组织进化实践 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>量子位</span>
+            <span>Sun, 31 Ma</span>
+          </div>
+        </div>
+
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.qbitai.com/2026/05/426706.html" target="_blank" rel="noopener">帮Gemini拿下IMO金牌的关键先生，差点成了职业钢琴家 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>量子位</span>
+            <span>Sat, 30 Ma</span>
+          </div>
+        </div>
+
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.qbitai.com/2026/05/426643.html" target="_blank" rel="noopener">英伟达清华团队提出Gamma-World：世界模型从「一个人玩」到「多人共处」 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>量子位</span>
+            <span>Sat, 30 Ma</span>
+          </div>
+        </div>
+
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.producthunt.com/products/tabtasker" target="_blank" rel="noopener">TabTasker <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>Product Hunt AI</span>
+            <span>2026-05-29</span>
+          </div>
+        </div>
+
+        <div class="article-detail detail-tertiary">
+          <h3><a href="https://www.producthunt.com/products/step-3-5-flash" target="_blank" rel="noopener">Step 3.7 Flash <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div class="detail-source">
+            <span>Product Hunt AI</span>
+            <span>2026-05-29</span>
+          </div>
+        </div>
+    </div>
+    <div class="section-header" id="sec-ai-blog">
+      <h3 class="section-title">官方博客</h3>
+    </div>
+    
+      <a href="https://openai.com/index/strengthening-societal-resilience-with-rosalind-biodefense" target="_blank" rel="noopener" class="card-spotlight ai no-img">
+        
+        <div class="spotlight-text">
+          <div class="card-title">OpenAI推生物防御模型</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Strengthening societal resilience with Rosalind Biodefense</div>
+          <div class="card-summary">OpenAI推出Rosalind Biodefense，向经审核的开发者和美国政府合作伙伴提供GPT-Rosalind的受控访问，用于生物防御、公共卫生和大流行病防范。标志着AI在生物安全领域的定向部署。</div>
+          <div class="card-meta"><span>OpenAI Blog</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          
+          <h3><a href="https://www.technologyreview.com/2026/05/29/1138107/how-the-popes-magnifica-humanitas-offers-a-template-for-individuals-to-meet-the-ai-moment/" target="_blank" rel="noopener">教皇AI通谕的技术启示 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">How the Pope’s Magnifica Humanitas offers a template for individuals to meet the AI moment</div>
+          <div class="detail-summary">教皇方济各发布关于人工智能的通谕《Magnifica Humanitas》，提出“技术从不中立”的观点，为个人应对AI时代提供伦理框架。引发技术政策界对AI价值观的严肃讨论。</div>
+          <div class="detail-source">
+            <span>MIT Tech Review AI</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://www.technologyreview.com/2026/05/29/1138107/how-the-popes-magnifica-humanitas-offers-a-template-for-individuals-to-meet-the-ai-moment/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://openai.com/index/boston-childrens-hospital" target="_blank" rel="noopener">AI辅助罕见病诊断 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Boston Children’s uses AI to unlock new diagnoses</div>
+          <div class="detail-summary">波士顿儿童医院利用OpenAI技术改善患者护理、减轻运营负担，并成功诊断40多例罕见病。展示了LLM在临床辅助诊断中的实际应用价值。</div>
+          <div class="detail-source">
+            <span>OpenAI Blog</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://openai.com/index/boston-childrens-hospital" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://openai.com/index/braintrust" target="_blank" rel="noopener">Codex加速代码实验 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">How Braintrust turns customer requests into code with Codex</div>
+          <div class="detail-summary">Braintrust工程师使用Codex与GPT-5.5将客户需求转化为代码，加速实验和开发流程。体现代码生成模型在工程效率提升中的实际应用。</div>
+          <div class="detail-source">
+            <span>OpenAI Blog</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://openai.com/index/braintrust" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          
+          <h3><a href="https://openai.com/index/trustworthy-third-party-evaluations-foundations" target="_blank" rel="noopener">第三方AI评估指南 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">A shared playbook for trustworthy third party evaluations</div>
+          <div class="detail-summary">OpenAI发布第三方AI评估指导手册，涵盖前沿模型的能力、安全措施和有效性评估方法。推动行业建立统一的AI可信度评估标准。</div>
+          <div class="detail-source">
+            <span>OpenAI Blog</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://openai.com/index/trustworthy-third-party-evaluations-foundations" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://wp.technologyreview.com/wp-content/uploads/2026/05/vials.jpg?w=1646" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.technologyreview.com/2026/05/28/1138096/lithium-extraction-rock-zero/" target="_blank" rel="noopener">新型锂提取工艺突破 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">How a new extraction process could unlock the world’s lithium</div>
+          <div class="detail-summary">研究人员发现一种更高效、更环保的锂提取新方法，可能解锁全球锂资源。锂是电动汽车和储能电池的关键材料，该技术对能源转型具有潜在影响。</div>
+          <div class="detail-source">
+            <span>MIT Tech Review AI</span>
+            <span>Thu, 28 Ma</span>
+            <a href="https://www.technologyreview.com/2026/05/28/1138096/lithium-extraction-rock-zero/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://wp.technologyreview.com/wp-content/uploads/2026/05/STScI-01GA76NYVXS4B1X63DBJJTYB3P.webp?w=1919" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.technologyreview.com/2026/05/29/1138110/the-download-lithium-extraction-ebola-ai-pope/" target="_blank" rel="noopener">锂提取与埃博拉控制 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">The Download: unlocking lithium and controlling Ebola</div>
+          <div class="detail-summary">今日科技简报：介绍一种新的锂提取工艺可能解锁全球锂资源，以及刚果埃博拉疫情控制面临的挑战。属于行业新闻汇总，信息密度较低。</div>
+          <div class="detail-source">
+            <span>MIT Tech Review AI</span>
+            <span>Fri, 29 Ma</span>
+            <a href="https://www.technologyreview.com/2026/05/29/1138110/the-download-lithium-extraction-ebola-ai-pope/" target="_blank" rel="noopener">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+
+  <div class="editor-note">今日最引人注目的并非大模型参数竞赛，而是AI在生物防御、太空智驾等垂直领域的精准落地。OpenAI的Rosalind项目与太空智驾的讨论，共同指向一个趋势：AI正从通用能力转向解决具体社会挑战，这或许是行业下一阶段的价值洼地。</div>
+</div>
+<script>
+(function(){
+  const links=document.querySelectorAll('.side-nav a');
+  const sections=[...links].map(l=>document.getElementById(l.getAttribute('href').slice(1))).filter(Boolean);
+  if(!sections.length)return;
+  const observer=new IntersectionObserver((entries)=>{
+    let active=null;
+    entries.forEach(e=>{if(e.isIntersecting)active=e.target.id});
+    if(active) links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+active));
+  },{rootMargin:'-20% 0px -70% 0px'});
+  sections.forEach(s=>observer.observe(s));
+})();
+</script>
+
+<footer class="footer">
+  风声驿站NPC · <a href="/rss.xml">RSS <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></a> · <a href="https://github.com">GitHub</a>
+  
+</footer>
+</body>
+</html>

@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C1A18" media="(prefers-color-scheme: dark)">
+<title>游戏风声 — 风声驿站NPC</title>
+<link rel="icon" href="/images/%E5%B0%8F%E5%B1%95(1).png">
+<style>
+:root {
+  --bg: #FFFFFF; --fg: #1A1A1A;
+  --card: #FFFFFF; --card-fg: #1A1A1A;
+  --muted: #F5F5F5; --muted-fg: #6B6B6B;
+  --border: #E5E5E5;
+  --nav-accent: #4A3728;
+  --accent-ai: #7A9A8B; --accent-ai-hover: #688677;
+  --accent-game: #B8956A; --accent-game-hover: #A07D52;
+  --card-ai: #FFFFFF;
+  --destructive: #8B3A3A;
+  --font-display: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'Georgia', 'Times New Roman', serif;
+  --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1C1A18; --fg: #EAE4DC;
+    --card: #252220; --card-fg: #EAE4DC;
+    --muted: #2E2B27; --muted-fg: #9A948E;
+    --border: #3D3832;
+    --nav-accent: #C4A97D;
+    --accent-ai: #8FB5A3; --accent-ai-hover: #7A9A8B;
+    --accent-game: #D4B896; --accent-game-hover: #B8956A;
+    --card-ai: var(--card);
+  }
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{color-scheme:light dark;scroll-padding-top:72px}body{font-family:var(--font-sans);background:var(--bg);color:var(--fg);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}a:hover{text-decoration:underline}
+a:focus-visible{outline:2px solid var(--accent-game);outline-offset:2px;border-radius:2px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent-game);outline-offset:2px}
+
+/* Navigation */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 16px;padding-top:max(0px,env(safe-area-inset-top));height:56px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:10}
+.nav-brand{font-size:1rem;font-weight:700;letter-spacing:-0.02em;display:flex;align-items:center;gap:6px;z-index:2}
+.nav-brand-icon{width:20px;height:20px;border-radius:6px;object-fit:cover;vertical-align:middle;background:var(--accent-game);opacity:0.85}
+.nav-toggle{display:none}
+.nav-toggle-label{display:none;width:32px;height:32px;cursor:pointer;z-index:2;position:relative}
+.nav-toggle-label span,.nav-toggle-label span::before,.nav-toggle-label span::after{display:block;height:2px;background:var(--fg);border-radius:1px;transition:transform 0.2s,opacity 0.2s;position:absolute;width:20px;left:6px}
+.nav-toggle-label span{top:15px}
+.nav-toggle-label span::before{content:"";top:-6px}
+.nav-toggle-label span::after{content:"";top:6px}
+.nav-toggle:checked+.nav-toggle-label span{background:transparent}
+.nav-toggle:checked+.nav-toggle-label span::before{top:0;transform:rotate(45deg)}
+.nav-toggle:checked+.nav-toggle-label span::after{top:0;transform:rotate(-45deg)}
+.nav-links{display:flex;gap:12px;font-size:0.8125rem;font-weight:500}
+.nav-links a{color:var(--muted-fg);transition:color 0.15s;padding:6px 2px;border-bottom:2px solid transparent;min-height:44px;display:inline-flex;align-items:center}
+.nav-links a:hover,.nav-links a.active{color:var(--fg);text-decoration:none;border-bottom-color:var(--nav-accent);font-weight:600}
+@media(max-width:640px){
+  .nav-toggle-label{display:block}
+  .nav-links{position:fixed;top:56px;left:0;right:0;background:var(--bg);flex-direction:column;gap:0;padding:8px 0;border-bottom:1px solid var(--border);transform:translateY(-120%);transition:transform 0.2s;z-index:1}
+  .nav-links a{min-height:48px;padding:12px 20px;border-bottom:1px solid var(--muted);width:100%}
+  .nav-toggle:checked~.nav-links{transform:translateY(0)}
+}
+
+/* Layout */
+.container{max-width:1200px;margin:0 auto;padding:16px}
+@media(min-width:768px){.container{padding:24px}}
+.hero-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:32px}
+@media(max-width:768px){.hero-grid{grid-template-columns:1fr;gap:16px;margin-bottom:20px}}
+
+/* Hero - left: top accent stripe */
+.hero-main{border-top:3px solid var(--accent-game);padding-top:16px;padding-left:0}
+.hero-main.ai{border-top-color:var(--accent-ai)}
+.hero-label{font-size:0.75rem;color:var(--muted-fg);margin-bottom:8px;font-weight:500;letter-spacing:0.04em}
+.hero-headline{font-family:var(--font-display);font-size:1.75rem;font-weight:700;line-height:1.3;margin-bottom:12px;text-wrap:balance}
+@media(max-width:480px){.hero-headline{font-size:1.25rem}.hero-overview{font-size:0.8125rem}}
+.hero-headline a{color:var(--fg)}
+.hero-overview{font-size:0.9375rem;color:var(--muted-fg);line-height:1.6;max-width:65ch;margin-bottom:16px}
+.hero-actions{display:flex;gap:16px;font-size:0.8125rem;font-weight:500}
+.hero-actions a{display:inline-flex;align-items:center;gap:4px}
+.hero-actions .game-link{color:var(--accent-game)}
+.hero-actions .ai-link{color:var(--accent-ai)}
+
+
+/* Hero - right sidebar */
+.hero-sidebar{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px}
+.hero-sidebar h3{font-size:0.8125rem;font-weight:600;margin-bottom:14px;color:var(--muted-fg);letter-spacing:0.03em}
+.hero-sidebar li{font-size:0.8125rem;line-height:1.5;padding:7px 0;border-bottom:1px solid var(--muted);list-style:none}
+.hero-sidebar li:last-child{border-bottom:none}
+.hero-sidebar li .source-tag{display:inline-block;font-size:0.6875rem;color:var(--muted-fg);margin-top:2px}
+
+/* Section header */
+.section-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:20px}
+.section-title{font-size:1.125rem;font-weight:600}
+.section-link{font-size:0.8125rem;color:var(--muted-fg);display:inline-flex;align-items:center;gap:3px}
+.section-link:hover{color:var(--fg)}
+
+/* Card grid */
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:36px}
+@media(max-width:768px){.card-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.card-grid{grid-template-columns:1fr}}
+
+/* Magazine cards: no shadows, thin top border + Badge */
+.card{background:var(--card);border:1px solid var(--border);border-top:2px solid var(--accent-game);border-radius:4px;padding:14px 16px;transition:border-color 0.15s;display:block;position:relative}
+.card:hover{border-color:var(--accent-game-hover);text-decoration:none}
+.card.ai{border-top-color:var(--accent-ai)}
+.card.ai:hover{border-color:var(--accent-ai-hover)}
+.card-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px;background:var(--muted)}
+/* Hero card (span-2, large headline) */
+.card-hero{grid-column:span 2;grid-row:span 2;padding:20px 24px}
+.card-hero .card-title{font-size:1.5rem;line-height:1.2;-webkit-line-clamp:3}
+.card-hero .card-summary{font-size:0.9375rem;-webkit-line-clamp:3}
+/* Brief card (text-only, compact) */
+.card-brief{padding:8px 12px}
+.card-brief::after{display:none}
+.card-brief .card-title{font-size:0.8125rem;-webkit-line-clamp:1}
+.card-title{font-family:var(--font-display);font-size:0.9375rem;font-weight:600;line-height:1.3;margin:0 0 6px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--fg);letter-spacing:-0.01em}
+.card-summary{font-size:0.8125rem;color:var(--muted-fg);line-height:1.45;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.card-subtitle{font-size:0.6875rem;color:var(--muted-fg);margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-size:0.6875rem;color:var(--muted-fg);display:flex;align-items:center;gap:6px;font-family:var(--font-sans)}
+.card-meta a{color:var(--muted-fg);display:inline-flex;align-items:center;gap:2px}
+.card-meta a:hover{color:var(--fg)}
+/* Section divider: thin border-t, newspaper-style */
+.section-divider{border-top:1px solid var(--border);margin:20px 0;padding-top:16px}
+
+/* Article detail (专题页) — top border + Badge */
+.article-detail{background:var(--card);border:1px solid var(--border);border-top:2px solid var(--accent-game);border-radius:4px;padding:16px 20px;transition:border-color 0.15s;position:relative}
+.article-detail:hover{border-color:var(--accent-game)}
+.article-detail:last-child{margin-bottom:0}
+.article-detail h3{font-size:1rem;font-weight:500;margin-bottom:6px;line-height:1.4}
+.article-detail h3 a{color:var(--fg)}
+.article-detail .detail-summary{font-size:0.875rem;color:var(--muted-fg);line-height:1.55;margin-bottom:8px}
+.article-detail .detail-source{font-size:0.75rem;color:var(--muted-fg);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.article-detail .detail-source a{color:var(--muted-fg);display:inline-flex;align-items:center;gap:2px;font-size:0.6875rem}
+.article-detail .detail-source a:hover{color:var(--fg)}
+/* AI detail cards: subtle green tint */
+.article-detail.ai-card{border-top-color:var(--accent-ai)}
+
+/* More grid */
+.more-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:32px}
+@media(max-width:768px){.more-grid{grid-template-columns:1fr}}
+.more-section h4{font-size:0.875rem;font-weight:600;margin-bottom:10px}
+.more-list li{font-size:0.8125rem;padding:5px 0;border-bottom:1px solid var(--muted);list-style:none}
+.more-list li:last-child{border-bottom:none}
+.more-list .src{color:var(--muted-fg);font-size:0.6875rem}
+
+/* Keyword tags */
+.keywords{display:flex;flex-wrap:wrap;gap:6px}
+.keyword-tag{display:inline-block;background:var(--muted);color:var(--muted-fg);border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-size:0.75rem;transition:background 0.15s}
+.keyword-tag:hover{background:var(--border);color:var(--fg);text-decoration:none}
+
+/* Editor note */
+.editor-note{background:var(--muted);border-radius:8px;padding:18px 22px;margin:28px 0;font-size:0.875rem;color:var(--muted-fg);line-height:1.65;border-left:3px solid var(--border)}
+/* Brief list: compact rows for score<3 no-image items */
+.brief-list{display:flex;flex-direction:column;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.brief-item{display:flex;align-items:baseline;justify-content:space-between;padding:10px 16px;background:var(--card);gap:12px;border-bottom:1px solid var(--muted)}
+.brief-item:last-child{border-bottom:none}
+.brief-item h4{font-size:0.8125rem;font-weight:500;line-height:1.4;flex:1}
+.brief-item h4 a{color:var(--fg)}
+/* 全部资讯源：双列紧凑布局 */
+.sources-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.sources-grid .brief-item{border-right:1px solid var(--muted)}
+.sources-grid .brief-item:nth-child(2n){border-right:none}
+@media(max-width:640px){.sources-grid{grid-template-columns:1fr}.sources-grid .brief-item{border-right:none}}
+.brief-source{font-size:0.6875rem;color:var(--muted-fg);white-space:nowrap;flex-shrink:0}
+/* Detail cards: 2-column grid for secondary/tertiary */
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+@media(max-width:768px){.detail-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.detail-grid{grid-template-columns:1fr}}
+/* Responsive: mobile polish */
+@media(max-width:480px){
+  .brief-item{flex-direction:column;gap:2px;padding:8px 12px}
+  .brief-item h4{white-space:normal}
+  .brief-source{font-size:0.625rem}
+  .section-header{margin-bottom:12px}
+  .section-title{font-size:1rem}
+  .keywords{gap:4px}
+  .keyword-tag{font-size:0.6875rem;padding:2px 8px}
+  .footer{padding:16px;font-size:0.6875rem}
+  .card-spotlight .spotlight-text .card-title{font-size:1.125rem}
+  .card-spotlight .spotlight-text .card-summary{-webkit-line-clamp:2}
+}
+/* Spotlight card: left-image-right-text, subtle top accent */
+.card-spotlight{display:grid;grid-template-columns:7fr 5fr;gap:20px;align-items:center;padding:0;border:1px solid var(--border);border-top:2px solid var(--accent-game);border-radius:4px;overflow:hidden;background:var(--card)}
+.card-spotlight.ai{border-top-color:var(--accent-ai)}
+.card-spotlight .spotlight-img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:0;margin:0;display:block}
+.card-spotlight .spotlight-text{padding:20px 20px 20px 0}
+.card-spotlight .spotlight-text .card-title{font-size:1.5rem;line-height:1.2;-webkit-line-clamp:3}
+.card-spotlight .spotlight-text .card-summary{font-size:0.9375rem;-webkit-line-clamp:4}
+@media(max-width:640px){.card-spotlight{grid-template-columns:1fr;gap:0}
+.card-spotlight .spotlight-text{padding:16px}}
+/* No-image spotlight: text-dominant */
+.card-spotlight.no-img{grid-template-columns:1fr;padding:28px 32px;min-height:200px}
+.card-spotlight.no-img .spotlight-text .card-title{font-size:1.75rem;-webkit-line-clamp:4}
+.card-spotlight.no-img .spotlight-text .card-summary{font-size:1rem;-webkit-line-clamp:6}
+/* Side navigation */
+.side-nav{position:fixed;right:max(24px,calc((100vw - 1200px)/2 - 180px));top:100px;width:150px;z-index:5}
+@media(max-width:1100px){.side-nav{display:none}}
+.side-nav a{display:block;padding:6px 10px;font-size:0.75rem;color:var(--muted-fg);border-left:2px solid transparent;transition:color 0.15s,border-color 0.15s;text-decoration:none}
+.side-nav a:hover,.side-nav a.active{color:var(--fg);border-left-color:var(--nav-accent)}
+
+/* Footer */
+.footer{border-top:1px solid var(--border);padding:24px;font-size:0.75rem;color:var(--muted-fg);text-align:center;line-height:1.8}
+.footer a{color:var(--muted-fg)}
+.footer a:hover{color:var(--fg)}
+.footer-weekly{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:0.8125rem}
+.footer-weekly a{font-weight:500}
+.footer-weekly .game-link{color:var(--accent-game)}
+.footer-weekly .ai-link{color:var(--accent-ai)}
+
+/* Weekly/Monthly report */
+.report-header{margin-bottom:24px}
+.report-header h1{font-size:1.5rem;font-weight:600;margin-bottom:8px}
+.report-header .period{font-size:0.8125rem;color:var(--muted-fg)}
+.report-stories{margin-bottom:24px}
+/* NPC commentary — editorial column style */
+.npc-commentary{margin:28px 0;padding:24px 28px 24px 24px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--npc-accent,var(--accent-game))}
+.npc-header{display:flex;align-items:baseline;gap:8px;margin-bottom:14px}
+.npc-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--npc-accent,var(--accent-game));flex-shrink:0}
+.npc-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.npc-avatar-sm{width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-right:8px;vertical-align:middle}
+.npc-name{font-size:0.8125rem;font-weight:600;color:var(--fg);letter-spacing:0.02em;font-family:var(--font-sans)}
+.npc-review{font-family:var(--font-display);font-size:1rem;line-height:1.75;color:var(--fg)}
+@media(max-width:480px){.npc-commentary{padding:16px 18px 16px 14px}.npc-review{font-size:0.875rem}}
+/* NPC section review — magazine subhead style */
+.section-npc-review{font-family:var(--font-sans);font-size:0.875rem;color:var(--fg);padding:4px 0 4px 14px;margin-bottom:20px;border-left:2px solid var(--npc-accent,var(--border));line-height:1.6;opacity:0.85}
+.report-stories li{padding:10px 0;border-bottom:1px solid var(--muted);font-size:0.875rem;list-style:none}
+.report-stories li:last-child{border-bottom:none}
+.report-stories strong{display:block;margin-bottom:2px}
+.report-stories span{font-size:0.75rem;color:var(--muted-fg)}
+.trends-list{margin-bottom:24px}
+.trends-list li{padding:5px 0;font-size:0.875rem;list-style:none}
+.trends-list li::before{content:"- ";color:var(--muted-fg)}
+/* Review archive pages */
+.review-list{max-width:800px;margin:0 auto}
+.review-month{margin-bottom:24px}
+.review-month h2{font-size:1rem;color:var(--muted-fg);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px}
+.review-month li{font-size:0.875rem;padding:6px 0;list-style:none;line-height:1.6}
+.review-month li a{color:var(--fg)}.review-month li a:hover{color:var(--accent-game)}
+.review-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;font-size:0.8125rem}
+.review-filters a{padding:4px 12px;border-radius:4px;background:var(--muted);color:var(--muted-fg);text-decoration:none}
+.review-filters a:hover{background:var(--border);color:var(--fg)}
+.review-filters a.active{background:var(--nav-accent);color:#fff}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-brand"><img src="/images/%E5%B0%8F%E5%B1%95.png" class="nav-brand-icon" alt="">风声驿站NPC</a>
+  <input type="checkbox" id="nav-toggle" class="nav-toggle">
+  <label for="nav-toggle" class="nav-toggle-label" aria-label="菜单"><span></span></label>
+  <div class="nav-links">
+    <a href="/">今日风声</a>
+    <a href="/gaming/" class="active">游戏风声</a>
+    <a href="/ai/">硅基风声</a>
+    <a href="/review/">往期回顾</a>
+    <a href="/search/" aria-label="搜索"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="hero-grid">
+    <div class="hero-main">
+      <div class="hero-label">游戏风声 · 2026-06-29</div>
+      <h1 class="hero-headline">《Meccha Chameleon》16天销量破千万</h1>
+      <p class="hero-overview">今日游戏行业动态丰富：独立捉迷藏游戏《Meccha Chameleon》16天销量破千万，成为现象级爆款；CD Projekt正式更名为CD Projekt Red，引发品牌混淆；《GTA 6》确认无实体版计划；Sony重申服务型游戏承诺，但移除用户已购数字电影引发争议；阿里计划出售灵犀互娱，腾讯考虑从日本工作室撤资；《Phasmophobia》1.0版延期至2027年；《以撒的结合：重生》Steam同时在线创历史新高。</p>
+    </div>
+    <div class="hero-sidebar">
+      <h3>关键词</h3>
+      <div class="keywords"><a href="/search/?q=Meccha%20Chameleon" class="keyword-tag">Meccha Chameleon</a><a href="/search/?q=GTA%206" class="keyword-tag">GTA 6</a><a href="/search/?q=CD%20Projekt" class="keyword-tag">CD Projekt</a><a href="/search/?q=Sony" class="keyword-tag">Sony</a><a href="/search/?q=Evo%202026" class="keyword-tag">Evo 2026</a><a href="/search/?q=%E7%81%B5%E7%8A%80%E4%BA%92%E5%A8%B1" class="keyword-tag">灵犀互娱</a><a href="/search/?q=Phasmophobia" class="keyword-tag">Phasmophobia</a><a href="/search/?q=%E4%BB%A5%E6%92%92%E7%9A%84%E7%BB%93%E5%90%88" class="keyword-tag">以撒的结合</a></div>
+    </div>
+  </div>
+
+  <nav class="side-nav"><a href="#sec-0">市场爆款</a>
+<a href="#sec-1">大厂动态</a>
+<a href="#sec-2">新游与更新</a>
+<a href="#sec-3">电竞与格斗</a>
+<a href="#sec-4">争议与趣闻</a>
+<a href="#npc-review">NPC观点</a>
+<a href="#all-sources">全部资讯源</a>
+</nav>
+
+  
+    <div class="section-header" id="sec-0">
+      <h2 class="section-title">市场爆款</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#059669"><img src="/images/小展.png" class="npc-avatar-sm" alt="小展" loading="lazy"><strong>小展：</strong>《Meccha Chameleon》16天千万销量是独立游戏现象级案例，验证低技术门槛创意玩法的高ROI。以撒12年后同创新高，说明长线运营依赖核心盘。</div>
+    
+      <a href="https://www.eurogamer.net/kingdom-come-deliverance-2-6-million-copies-sold" target="_blank" rel="noopener noreferrer" class="card-spotlight">
+        <img src="https://assetsio.gnwcdn.com/KCDII_Standard_KA_Unbranded.png?width=690&quality=85&format=jpg&auto=webp" class="spotlight-img" loading="lazy" alt="" aria-hidden="true">
+        <div class="spotlight-text">
+          <div class="card-title">天国拯救2销量600万</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Kingdom Come: Deliverance 2 sells 6 million copies worldwide</div>
+          <div class="card-summary">《Kingdom Come: Deliverance 2》全球销量达600万份，表现强劲。</div>
+          <div class="card-meta"><span>Eurogamer.net</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/meccha-chameleon.jpg?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.eurogamer.net/meccha-chameleon-10-million-sales" target="_blank" rel="noopener noreferrer">捉迷藏游戏Meccha Chameleon销量千万 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Viral hide-and-seek indie hit Meccha Chameleon sells 10m copies in just 16 days</div>
+          <div class="detail-summary">独立捉迷藏游戏《Meccha Chameleon》自6月10日发售仅16天销量突破1000万份，成为现象级爆款。</div>
+          <div class="detail-source">
+            <span>Eurogamer.net</span>
+            <span>Sat, 27 Ju</span>
+            <a href="https://www.eurogamer.net/meccha-chameleon-10-million-sales" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://automaton-media.com/wp-content/uploads/2026/06/20260629-452463-header.jpg" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://automaton-media.com/articles/newsjp/20260629-452463/" target="_blank" rel="noopener noreferrer">鬼畜ローグライクアクション『The Binding of Isaac: Rebirth』リリース12年目にして「Steam同接12万人超え」。過去最高記録をぶち抜く人気爆発 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">鬼畜ローグライクアクション『The Binding of Isaac: Rebirth』リリース12年目にして「Steam同接12万人超え」。過去最高記録をぶち抜く人気爆発</div>
+          <div class="detail-summary">ローグライクアクションRPG『The Binding of Isaac: Rebirth』のSteam同時接続プレイヤー数が12万3429人を記録した。</div>
+          <div class="detail-source">
+            <span>Automaton Media</span>
+            <span>Mon, 29 Ju</span>
+            <a href="https://automaton-media.com/articles/newsjp/20260629-452463/" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-1">
+      <h2 class="section-title">大厂动态</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#059669"><img src="/images/小展.png" class="npc-avatar-sm" alt="小展" loading="lazy"><strong>小展：</strong>Sony坚持服务型游戏是赌徒心态，前作失败未吸取教训。阿里出售灵犀互娱是止损，CD Projekt更名纯属制造混乱，GTA 6去实体化加速数字转型。</div>
+    
+      <a href="https://www.eurogamer.net/sony-still-believes-in-live-service-games" target="_blank" rel="noopener noreferrer" class="card-spotlight">
+        <img src="https://assetsio.gnwcdn.com/big-question-live-service.jpg?width=690&quality=85&format=jpg&auto=webp" class="spotlight-img" loading="lazy" alt="" aria-hidden="true">
+        <div class="spotlight-text">
+          <div class="card-title">索尼坚持服务型游戏</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Sony Interactive Entertainment president and CEO hasn&#039;t given up on live-service games just yet</div>
+          <div class="card-summary">Sony Interactive Entertainment总裁Hideaki Nishino重申公司对服务型游戏的承诺，尽管此前多款大作失败或被取消。</div>
+          <div class="card-meta"><span>Eurogamer.net</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/ULTIMATE_EDITION_01.16qc1xq5nigg1.jpg?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.eurogamer.net/gta-6-no-physical-release" target="_blank" rel="noopener noreferrer">GTA6无实体版计划 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">GTA 6 has no plans for a post-launch physical release, &quot;not at launch, and not months later&quot;, insists new report</div>
+          <div class="detail-summary">新报告称《Grand Theft Auto 6》在数字版发售后，无论是首发还是数月后均无推出实体版的计划。</div>
+          <div class="detail-source">
+            <span>Eurogamer.net</span>
+            <span>Sat, 27 Ju</span>
+            <a href="https://www.eurogamer.net/gta-6-no-physical-release" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/cd-projekt-warns-employee-data-might-be-caught-up-in-leak-circulating-online-1623355834767.jpg?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.eurogamer.net/cd-projekt-rebrands-as-cd-projekt-red" target="_blank" rel="noopener noreferrer">CD Projekt更名CD Projekt Red <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">CD Projekt is rebranding as CD Projekt Red, but confusingly, CD Projekt Red is still CD Projekt Red</div>
+          <div class="detail-summary">CD Projekt正式更名为CD Projekt Red（CD Projekt Red Spółka Akcyjna），但旗下工作室CD Projekt Red名称不变，引发混淆。</div>
+          <div class="detail-source">
+            <span>Eurogamer.net</span>
+            <span>Sun, 28 Ju</span>
+            <a href="https://www.eurogamer.net/cd-projekt-rebrands-as-cd-projekt-red" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="http://img.chuapp.com/wp-content/Picture/2026-06-27/1176a3f5cce29569.jpg?imageView2/2/w/700" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="http://www.chuapp.com/article/291445.html" target="_blank" rel="noopener noreferrer">阿里拟售灵犀互娱 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">触乐本周行业大事：阿里计划出售灵犀互娱，腾讯考虑从多家日本游戏工作室撤资，《恋与深空》上线第6位男主角</div>
+          <div class="detail-summary">据行业消息，阿里巴巴计划以超10亿美元出售灵犀互娱，三七互娱、儒意、巨人网络等表达收购意愿。灵犀互娱前身为阿里游戏，2020年升级为独立品牌，2024年由阿里大文娱CEO分管。</div>
+          <div class="detail-source">
+            <span>触乐</span>
+            <span>Sat, 27 Ju</span>
+            <a href="http://www.chuapp.com/article/291445.html" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-2">
+      <h2 class="section-title">新游与更新</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#059669"><img src="/images/小展.png" class="npc-avatar-sm" alt="小展" loading="lazy"><strong>小展：</strong>《Phasmophobia》1.0延期至2027年，优先保质量是正确决策。明日方舟联动小马宝莉是典型IP套皮，用户感知有限。</div>
+    
+      <a href="https://www.eurogamer.net/phasmophobia-version-1-launch-delayed" target="_blank" rel="noopener noreferrer" class="card-spotlight">
+        <img src="https://assetsio.gnwcdn.com/phas_nintendo_screenshot_3.webp?width=690&quality=85&format=jpg&auto=webp" class="spotlight-img" loading="lazy" alt="" aria-hidden="true">
+        <div class="spotlight-text">
+          <div class="card-title">恐鬼症1.0延期至2027</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Phasmophobia delays highly-anticipated 1.0 launch to 2027 as it &quot;prioritises quality over speed&quot;</div>
+          <div class="card-summary">Kinetic Games宣布《Phasmophobia》1.0正式版延期至2027年，优先保证质量，同时公布新路线图，包括重制Willow Street地图和两次重大更新。</div>
+          <div class="card-meta"><span>Eurogamer.net</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          <img src="https://image.gcores.com/0513ae1c6e33786d37c7943e36f2388f-4320-2848.jpg?x-oss-process=image/resize,limit_1,m_fill,w_626,h_292/quality,q_90" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.gcores.com/articles/216540" target="_blank" rel="noopener noreferrer">碧蓝幻想VS新版本上线 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">《碧蓝幻想Versus -RISING-》最新版本 Ver 2.60 将于 9 月 17 日上线！ Nintendo Switch 2 版也将于同日发售</div>
+          <div class="detail-summary">Cygames宣布《碧蓝幻想Versus -RISING-》Ver 2.60版本更新及Nintendo Switch 2版将于2026年9月17日同步发售，由ARC SYSTEM WORKS开发。</div>
+          <div class="detail-source">
+            <span>机核网</span>
+            <span>Mon, 29 Ju</span>
+            <a href="https://www.gcores.com/articles/216540" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://image.gcores.com/ed4c8a6abe53514545dd7226a25cf6dc-616-353.jpg?x-oss-process=image/resize,limit_1,m_fill,w_626,h_292/quality,q_90" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.gcores.com/articles/216534" target="_blank" rel="noopener noreferrer">收获日2推出64位B测 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">升级64位:《收获日2》将于本周二推出公开B测版本</div>
+          <div class="detail-summary">OVERKILL工作室宣布《收获日2》将于本周二推出公开Beta测试，升级至64位版本和DX11，游戏大小减至约35GB，测试持续至7月底。</div>
+          <div class="detail-source">
+            <span>机核网</span>
+            <span>Mon, 29 Ju</span>
+            <a href="https://www.gcores.com/articles/216534" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://image.gcores.com/f4bae2fdcde292da7db8946f30a320b3-1920-1080.jpg?x-oss-process=image/resize,limit_1,m_fill,w_626,h_292/quality,q_90" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.gcores.com/articles/216532" target="_blank" rel="noopener noreferrer">明日方舟×小马宝莉联动 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">《明日方舟》× 《小马宝莉》「魔法与友谊」联动将于7月3日开启</div>
+          <div class="detail-summary">《明日方舟》与《小马宝莉》联动活动「魔法与友谊」将于7月3日开启，全平台PV播放量达指定值可解锁奖励，同时推出组合包和干员新装。</div>
+          <div class="detail-source">
+            <span>机核网</span>
+            <span>Mon, 29 Ju</span>
+            <a href="https://www.gcores.com/articles/216532" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-3">
+      <h2 class="section-title">电竞与格斗</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#059669"><img src="/images/小展.png" class="npc-avatar-sm" alt="小展" loading="lazy"><strong>小展：</strong>Evo Vegas 2026 2XKO项目参赛人数1080，Riot入局格斗电竞是明智选择。漫威Tokon调优万磁王体现对玩家反馈的重视。</div>
+    
+      <a href="https://esportsinsider.com/2026/06/hikari-interview-2xko-evo-vegas-2026" target="_blank" rel="noopener noreferrer" class="card-spotlight">
+        <img src="https://esportsinsider.com/wp-content/uploads/2026/06/Untitled-design-35-large.png" class="spotlight-img" loading="lazy" alt="" aria-hidden="true">
+        <div class="spotlight-text">
+          <div class="card-title">Hikari称雄Evo Vegas 2026 2XKO赛事</div>
+          <div class="card-subtitle" style="margin-bottom:8px">“I want to be an icon like SonicFox”: Hikari wins 2XKO tourney at Evo Vegas 2026</div>
+          <div class="card-summary">在Evo Vegas 2026上，Riot的2v2格斗游戏2XKO作为主舞台项目之一，吸引了1080名选手参赛。最终，Jo&#039;siah “Hikari” Miller脱颖而出，赢得冠军。Hikari赛后表示希望成为像SonicFox一样的标志性人物。</div>
+          <div class="card-meta"><span>Esports Insider</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          <img src="https://esportsinsider.com/wp-content/uploads/2026/06/SI202606270014-large.jpg" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://esportsinsider.com/2026/06/menard-interview-evo-vegas-2026" target="_blank" rel="noopener noreferrer">MenaRD谈Kemonomichi争议与保持积极心态 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">“That saltiness and anger stays with the game”: MenaRD on Kemonomichi controversy, Evo Vegas, and what keeps him positive at every tourney</div>
+          <div class="detail-summary">世界顶尖《街霸6》选手Saul Leonardo “MenaRD” Mena II在Evo Vegas 2026上谈及Kemonomichi争议，并分享了自己如何在每场比赛中保持积极心态。他认为酸涩和愤怒情绪会留在游戏中，而自己则专注于正面应对。</div>
+          <div class="detail-source">
+            <span>Esports Insider</span>
+            <span>Sat, 27 Ju</span>
+            <a href="https://esportsinsider.com/2026/06/menard-interview-evo-vegas-2026" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://assets-prd.ignimgs.com/2026/06/28/tokon-magneto-1782679466266.png" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.ign.com/articles/marvel-tokon-developers-explain-how-they-made-the-coolest-version-of-magneto-they-could-evo-2026" target="_blank" rel="noopener noreferrer">《漫威Tokon》万磁王设计 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Marvel Tokon Developers Explain How They Made the Coolest Version of Magneto They Could | Evo 2026</div>
+          <div class="detail-summary">在Evo 2026上，Arc System Works和漫威游戏解释了如何根据Beta反馈调整《漫威Tokon》，并打造出最酷的万磁王版本。</div>
+          <div class="detail-source">
+            <span>IGN News</span>
+            <span>Sun, 28 Ju</span>
+            <a href="https://www.ign.com/articles/marvel-tokon-developers-explain-how-they-made-the-coolest-version-of-magneto-they-could-evo-2026" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-4">
+      <h2 class="section-title">争议与趣闻</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#059669"><img src="/images/小展.png" class="npc-avatar-sm" alt="小展" loading="lazy"><strong>小展：</strong>PlayStation移除已购数字电影是信任危机，数字资产所有权问题凸显。山寨Steam Machine出现是市场乱象，但规格矛盾暴露品控问题。</div>
+    
+      <a href="https://www.eurogamer.net/playstation-to-remove-studio-canal-movies-from-libraries" target="_blank" rel="noopener noreferrer" class="card-spotlight">
+        <img src="https://assetsio.gnwcdn.com/terminator-2d-t-1000.jpg?width=690&quality=85&format=jpg&auto=webp" class="spotlight-img" loading="lazy" alt="" aria-hidden="true">
+        <div class="spotlight-text">
+          <div class="card-title">PlayStation移除已购数字电影</div>
+          <div class="card-subtitle" style="margin-bottom:8px">PlayStation is pulling &quot;previously purchased&quot; digital movies from users&#039; libraries</div>
+          <div class="card-summary">Sony通知PlayStation用户，数百部此前购买的数字电影将于今年晚些时候从用户库中移除，引发争议。</div>
+          <div class="card-meta"><span>Eurogamer.net</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          <img src="https://assets-prd.ignimgs.com/2026/06/28/snk-developer-interview-fatal-fury-kenshiro-1782686950489.png" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.ign.com/articles/snk-explains-why-they-couldnt-make-terry-bogard-explode-while-fighting-kenshiro-in-city-of-the-wolves" target="_blank" rel="noopener noreferrer">SNK谈特瑞不爆之谜 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">SNK Explains Why They Couldn’t Make Terry Bogard Explode While Fighting Kenshiro in City of the Wolves</div>
+          <div class="detail-summary">SNK解释了在《狼之城》中如何实现健次郎标志性招式，同时确保游戏维持青少年ESRB评级，避免特瑞·博加德被爆体。</div>
+          <div class="detail-source">
+            <span>IGN News</span>
+            <span>Mon, 29 Ju</span>
+            <a href="https://www.ign.com/articles/snk-explains-why-they-couldnt-make-terry-bogard-explode-while-fighting-kenshiro-in-city-of-the-wolves" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://automaton-media.com/wp-content/uploads/2026/06/20260629-452452-header2.jpg" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://automaton-media.com/articles/newsjp/20260629-452452/" target="_blank" rel="noopener noreferrer">「Steam Machine」の偽物みたいなゲーミングPCがさっそく出現。“スペック矛盾だらけ”半額パチモンマシン <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">「Steam Machine」の偽物みたいなゲーミングPCがさっそく出現。“スペック矛盾だらけ”半額パチモンマシン</div>
+          <div class="detail-summary">中国では同機に似た製品がさっそく登場。しかし記載されているスペックには不自然な点も多いようだ。</div>
+          <div class="detail-source">
+            <span>Automaton Media</span>
+            <span>Mon, 29 Ju</span>
+            <a href="https://automaton-media.com/articles/newsjp/20260629-452452/" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+
+  
+  <div class="npc-commentary" id="npc-review" style="--npc-accent:#059669">
+    <div class="npc-header">
+      <img src="/images/小展.png" class="npc-avatar" alt="小展" loading="lazy">
+      <span class="npc-name">小展</span>
+    </div>
+    <div class="npc-review">今日游戏行业亮点在独立爆款《Meccha Chameleon》，16天千万销量证明创意玩法比技术堆砌更有效。大厂动态混乱：CD Projekt更名引发品牌混淆，阿里出售灵犀互娱反映国内大厂战略收缩。Sony坚持服务型游戏是高风险赌注，玩家信任因移除已购数字电影受损。</div>
+  </div>
+
+  
+  <div class="section-divider"></div>
+  <div class="section-header">
+    <h2 class="section-title" id="all-sources">全部资讯源</h2>
+    <span style="font-size:0.75rem;color:var(--muted-fg)">14 个来源 · 各取 3 条</span>
+  </div>
+  <div class="sources-grid">
+        <div class="brief-item">
+          <h4><a href="https://www.eurogamer.net/tetris-world-builders-animated-series" target="_blank" rel="noopener noreferrer">俄罗斯方块动画系列 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Eurogamer.net</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gcores.com/articles/216537" target="_blank" rel="noopener noreferrer">小圆剧场版预告发布 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">机核网</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.ign.com/articles/house-of-the-dragon-season-3-helaena-fan-theory-caterpillar" target="_blank" rel="noopener noreferrer">《龙之家族》第三季暗示 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">IGN News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gcores.com/articles/216533" target="_blank" rel="noopener noreferrer">永劫无间Epic版下架 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">机核网</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.ign.com/articles/house-of-the-dragon-season-3-episode-2-recap-and-review" target="_blank" rel="noopener noreferrer">《龙之家族》S3E2回顾 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">IGN News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.ign.com/articles/the-vampire-lestat-episode-3-queen-of-the-damned-devils-minion-rolin-jones" target="_blank" rel="noopener noreferrer">《吸血鬼莱斯特》谈改编 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">IGN News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.eurogamer.net/star-wars-galactic-racer-former-burnout-devs-ps1-classic-purest-expression-of-gaming" target="_blank" rel="noopener noreferrer">前Burnout开发者打造星战赛车游戏 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Eurogamer.net</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.4gamer.net/games/369/G036904/20260629011/" target="_blank" rel="noopener noreferrer">「ファイアーエムブレム ヒーローズ」，神階英雄のヨルムンガンドが本日参戦。イベントの詳細が公開に <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">4Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.4gamer.net/games/238/G023885/20260624056/" target="_blank" rel="noopener noreferrer">「グランサイファーキッチン」は6月26日で5周年！　リニューアルされたメニューやノベルティで，グラブルの世界を満喫してきた <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">4Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.4gamer.net/games/021/G102129/20260629010/" target="_blank" rel="noopener noreferrer">「ハイドライド」作者・内藤時浩氏によるレトロアクションSTG「XeGrader plus」，7月6日にSteamで発売決定 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">4Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://automaton-media.com/articles/newsjp/20260629-452445/" target="_blank" rel="noopener noreferrer">マーベル対戦格闘ゲーム『MARVEL Tōkon: Fighting Souls』7月24日より初のオープンベータテスト実施決定。デッドプールやブレイド参戦もお披露目、ブレイドはさっそく使える <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Automaton Media</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.polygon.com/house-of-the-dragon-season-3-episode-2-ending-explained-death/" target="_blank" rel="noopener noreferrer">House of the Dragon season 3 episode 2 ending expl <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Polygon</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.polygon.com/evo-2026-everything-announced/" target="_blank" rel="noopener noreferrer">Evo 2026 had tons of reveals — here&#039;s what we lear <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Polygon</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.pcgamer.com/gaming-industry/steam-week-in-review-steam-sales-are-the-best-time-to-hoard-dozens-of-forgotten-90s-pc-gaming-oddities/" target="_blank" rel="noopener noreferrer"> Steam Week in Review: Steam sales are the best ti <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">PC Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://automaton-media.com/articles/newsjp/20260629-452438/" target="_blank" rel="noopener noreferrer">PS5/Steam“一人称視点”リアル競馬ゲーム『フルストライド』7月16日発売へ。マルチ対応、ジョッキー視点で馬を駆るレース重視競馬ゲーム <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Automaton Media</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.youxituoluo.com/534604.html" target="_blank" rel="noopener noreferrer">全球游戏营收破2000亿 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">游戏陀螺</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.youxituoluo.com/534606.html" target="_blank" rel="noopener noreferrer">腾讯抛售日本工作室股份 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">游戏陀螺</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.polygon.com/best-rpg-side-quests/" target="_blank" rel="noopener noreferrer">Best RPG side quests: 8 games that make the option <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Polygon</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://kotaku.com/new-indie-text-adventure-hides-a-eerie-vaporwave-labyrinth-2000711270" target="_blank" rel="noopener noreferrer">New Indie Text Adventure Hides An Incredibly Eerie <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Kotaku</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://kotaku.com/dead-or-alive-6-last-round-releases-with-over-400-dlcs-and-forces-owners-to-repurchase-content-they-already-own-2000711242" target="_blank" rel="noopener noreferrer">Dead Or Alive 6 Last Round Releases With Over 400  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Kotaku</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.pcgamer.com/games/fallout/fallout-new-vegas-director-josh-sawyer-says-obsidian-has-karma-police-who-go-through-the-game-making-sure-every-skill-gets-enough-cool-stuff-to-do-were-not-gonna-leave-you-out-to-dry/" target="_blank" rel="noopener noreferrer"> Fallout: New Vegas director Josh Sawyer says Obsi <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">PC Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.pcgamer.com/games/fighting/mina-the-hollower-will-make-her-fighting-game-debut-in-a-crossover-next-year/" target="_blank" rel="noopener noreferrer"> Mina the Hollower will make her fighting game deb <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">PC Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://nintendoeverything.com/famitsus-most-wanted-games-june-28-2026/" target="_blank" rel="noopener noreferrer">Famitsu最期待游戏榜 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Nintendo Everything</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://tieba.baidu.com/hottopic/browse/hottopic?topic_id=28355717&amp;topic_name=%E9%9F%A9%E5%9B%BD%E9%98%9F%E4%B8%A2%E4%BA%BA%E5%88%B0%E5%AE%B6%2C%E6%80%BB%E7%BB%9F%E5%8F%91%E9%A3%99%E7%97%9B%E6%89%B9" target="_blank" rel="noopener noreferrer">韩国队丢人到家,总统发飙痛批 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">贴吧热榜</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://tieba.baidu.com/hottopic/browse/hottopic?topic_id=28355715&amp;topic_name=%E5%85%A8%E8%81%8C%E6%B3%95%E5%B8%88%E9%81%AD%E8%AE%A8%E4%BC%90%2C%E4%BD%9C%E8%80%85%E7%A7%92%E8%AE%A4%E6%80%82" target="_blank" rel="noopener noreferrer">全职法师遭讨伐,作者秒认怂 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">贴吧热榜</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://tieba.baidu.com/hottopic/browse/hottopic?topic_id=28355712&amp;topic_name=%E7%BE%8E%E7%9A%84%E5%8D%96%E7%88%86%2C%E6%AC%A7%E6%B4%B2%E8%A3%85%E7%A9%BA%E8%B0%83%E9%9A%BE%E5%9C%A8%E5%93%AA%3F" target="_blank" rel="noopener noreferrer">美的卖爆,欧洲装空调难在哪? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">贴吧热榜</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://kotaku.com/for-25th-anniversary-tom-hall-unlocks-the-vault-on-classic-too-weird-to-live-2000711267" target="_blank" rel="noopener noreferrer">Behold The True Story Behind A Truly One-Of-A-Kind <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Kotaku</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gcores.com/articles/216517" target="_blank" rel="noopener noreferrer">Fear the Unknown第五季发售 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">机核网</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://nintendoeverything.com/nintendo-switch-eshop-latest-sales-lowest-prices-ever-for-tmnt-shredders-revenge-tomb-raider-4-6-witcher-3-more/" target="_blank" rel="noopener noreferrer">Switch eShop史低促销 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Nintendo Everything</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://automaton-media.com/articles/interviewsjp/20260629-452009/" target="_blank" rel="noopener noreferrer">基本プレイ無料セクシー吸血鬼MMO『ヴァンピール』は“当たり前”を壊す「開発者が自分で遊びたいMMORPG」。大人向け描写は妥協なし、ヒーラーもなし、財布だけで勝たせない <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Automaton Media</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://nintendoeverything.com/the-necromancers-tale-launch-trailer/" target="_blank" rel="noopener noreferrer">《死灵法师传说》登陆Switch 2 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Nintendo Everything</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.eurogamer.net/what-weve-been-playing-i-can-feel-tears-starting-to-prickle-my-eyes" target="_blank" rel="noopener noreferrer">编辑本周游戏体验 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Eurogamer.net</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.siliconera.com/see-you-there-beyond-the-ocean-good-times-make-bad-times-more-meaningful/" target="_blank" rel="noopener noreferrer">See You There, Beyond the Ocean Good Times Make Ba <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Siliconera</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.youxituoluo.com/534605.html" target="_blank" rel="noopener noreferrer">灵犀曝光UE5三国SLG <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">游戏陀螺</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gematsu.com/2026/06/blazblue-central-fiction-dlc-character-trinity-glassfille-revealed" target="_blank" rel="noopener noreferrer">《苍翼默示录》新DLC角色 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Gematsu</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gematsu.com/2026/06/rivals-of-aether-ii-adds-gouie-on-august-4-mina-the-hollower-in-2027" target="_blank" rel="noopener noreferrer">《以太之争2》新角色公布 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Gematsu</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gematsu.com/2026/06/guilty-gear-strive-dlc-character-roboky-launches-july-2" target="_blank" rel="noopener noreferrer">《罪恶装备：斗争》新DLC <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Gematsu</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.rockpapershotgun.com/visual-novel-coffee-talk-tokyo-serves-up-an-image-of-cool-japan-but-not-much-more" target="_blank" rel="noopener noreferrer">Visual novel Coffee Talk Tokyo serves up an image  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Rock Paper Shotgun</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.siliconera.com/review-and-roger-takes-advantage-of-switch-2-features/" target="_blank" rel="noopener noreferrer">Review: and Roger Takes Advantage of Switch 2 Feat <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Siliconera</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.rockpapershotgun.com/the-sunday-papers-816" target="_blank" rel="noopener noreferrer">The Sunday Papers <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Rock Paper Shotgun</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.rockpapershotgun.com/joy-malignant-is-a-photobashed-dice-based-rpg-where-every-choice-you-make-affects-how-your-faceless-body-looks" target="_blank" rel="noopener noreferrer">Joy Malignant is a photobashed, dice-based RPG whe <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Rock Paper Shotgun</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.siliconera.com/sailor-zombie-still-feels-fresh-over-10-years-later/" target="_blank" rel="noopener noreferrer">Sailor Zombie Still Feels Fresh Over 10 Years Late <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Siliconera</span>
+        </div></div>
+
+  
+</div>
+<script>
+(function(){
+  const links=document.querySelectorAll('.side-nav a');
+  const sections=[...links].map(l=>document.getElementById(l.getAttribute('href').slice(1))).filter(Boolean);
+  if(!sections.length)return;
+  const observer=new IntersectionObserver((entries)=>{
+    let active=null;
+    entries.forEach(e=>{if(e.isIntersecting)active=e.target.id});
+    if(active) links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+active));
+  },{rootMargin:'-20% 0px -70% 0px'});
+  sections.forEach(s=>observer.observe(s));
+})();
+</script>
+
+<footer class="footer">
+  风声驿站NPC · <a href="/rss.xml">RSS <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></a> · <a href="https://github.com">GitHub</a>
+  
+</footer>
+</body>
+</html>

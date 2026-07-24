@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C1A18" media="(prefers-color-scheme: dark)">
+<title>游戏风声 — 风声驿站NPC</title>
+<link rel="icon" href="/images/%E5%B0%8F%E7%9F%A5(1).png">
+<style>
+:root {
+  --bg: #FFFFFF; --fg: #1A1A1A;
+  --card: #FFFFFF; --card-fg: #1A1A1A;
+  --muted: #F5F5F5; --muted-fg: #6B6B6B;
+  --border: #E5E5E5;
+  --nav-accent: #4A3728;
+  --accent-ai: #7A9A8B; --accent-ai-hover: #688677;
+  --accent-game: #B8956A; --accent-game-hover: #A07D52;
+  --card-ai: #FFFFFF;
+  --destructive: #8B3A3A;
+  --font-display: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'Georgia', 'Times New Roman', serif;
+  --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1C1A18; --fg: #EAE4DC;
+    --card: #252220; --card-fg: #EAE4DC;
+    --muted: #2E2B27; --muted-fg: #9A948E;
+    --border: #3D3832;
+    --nav-accent: #C4A97D;
+    --accent-ai: #8FB5A3; --accent-ai-hover: #7A9A8B;
+    --accent-game: #D4B896; --accent-game-hover: #B8956A;
+    --card-ai: var(--card);
+  }
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{color-scheme:light dark;scroll-padding-top:72px}body{font-family:var(--font-sans);background:var(--bg);color:var(--fg);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}a:hover{text-decoration:underline}
+a:focus-visible{outline:2px solid var(--accent-game);outline-offset:2px;border-radius:2px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent-game);outline-offset:2px}
+
+/* Navigation */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 16px;padding-top:max(0px,env(safe-area-inset-top));height:56px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:10}
+.nav-brand{font-size:1rem;font-weight:700;letter-spacing:-0.02em;display:flex;align-items:center;gap:6px;z-index:2}
+.nav-brand-icon{width:20px;height:20px;border-radius:6px;object-fit:cover;vertical-align:middle;background:var(--accent-game);opacity:0.85}
+.nav-toggle{display:none}
+.nav-toggle-label{display:none;width:32px;height:32px;cursor:pointer;z-index:2;position:relative}
+.nav-toggle-label span,.nav-toggle-label span::before,.nav-toggle-label span::after{display:block;height:2px;background:var(--fg);border-radius:1px;transition:transform 0.2s,opacity 0.2s;position:absolute;width:20px;left:6px}
+.nav-toggle-label span{top:15px}
+.nav-toggle-label span::before{content:"";top:-6px}
+.nav-toggle-label span::after{content:"";top:6px}
+.nav-toggle:checked+.nav-toggle-label span{background:transparent}
+.nav-toggle:checked+.nav-toggle-label span::before{top:0;transform:rotate(45deg)}
+.nav-toggle:checked+.nav-toggle-label span::after{top:0;transform:rotate(-45deg)}
+.nav-links{display:flex;gap:12px;font-size:0.8125rem;font-weight:500}
+.nav-links a{color:var(--muted-fg);transition:color 0.15s;padding:6px 2px;border-bottom:2px solid transparent;min-height:44px;display:inline-flex;align-items:center}
+.nav-links a:hover,.nav-links a.active{color:var(--fg);text-decoration:none;border-bottom-color:var(--nav-accent);font-weight:600}
+@media(max-width:640px){
+  .nav-toggle-label{display:block}
+  .nav-links{position:fixed;top:56px;left:0;right:0;background:var(--bg);flex-direction:column;gap:0;padding:8px 0;border-bottom:1px solid var(--border);transform:translateY(-120%);transition:transform 0.2s;z-index:1}
+  .nav-links a{min-height:48px;padding:12px 20px;border-bottom:1px solid var(--muted);width:100%}
+  .nav-toggle:checked~.nav-links{transform:translateY(0)}
+}
+
+/* Layout */
+.container{max-width:1200px;margin:0 auto;padding:16px}
+@media(min-width:768px){.container{padding:24px}}
+.hero-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:32px}
+@media(max-width:768px){.hero-grid{grid-template-columns:1fr;gap:16px;margin-bottom:20px}}
+
+/* Hero - left: top accent stripe */
+.hero-main{border-top:3px solid var(--accent-game);padding-top:16px;padding-left:0}
+.hero-main.ai{border-top-color:var(--accent-ai)}
+.hero-label{font-size:0.75rem;color:var(--muted-fg);margin-bottom:8px;font-weight:500;letter-spacing:0.04em}
+.hero-headline{font-family:var(--font-display);font-size:1.75rem;font-weight:700;line-height:1.3;margin-bottom:12px;text-wrap:balance}
+@media(max-width:480px){.hero-headline{font-size:1.25rem}.hero-overview{font-size:0.8125rem}}
+.hero-headline a{color:var(--fg)}
+.hero-overview{font-size:0.9375rem;color:var(--muted-fg);line-height:1.6;max-width:65ch;margin-bottom:16px}
+.hero-actions{display:flex;gap:16px;font-size:0.8125rem;font-weight:500}
+.hero-actions a{display:inline-flex;align-items:center;gap:4px}
+.hero-actions .game-link{color:var(--accent-game)}
+.hero-actions .ai-link{color:var(--accent-ai)}
+
+
+/* Hero - right sidebar */
+.hero-sidebar{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px}
+.hero-sidebar h3{font-size:0.8125rem;font-weight:600;margin-bottom:14px;color:var(--muted-fg);letter-spacing:0.03em}
+.hero-sidebar li{font-size:0.8125rem;line-height:1.5;padding:7px 0;border-bottom:1px solid var(--muted);list-style:none}
+.hero-sidebar li:last-child{border-bottom:none}
+.hero-sidebar li .source-tag{display:inline-block;font-size:0.6875rem;color:var(--muted-fg);margin-top:2px}
+
+/* Section header */
+.section-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:20px}
+.section-title{font-size:1.125rem;font-weight:600}
+.section-link{font-size:0.8125rem;color:var(--muted-fg);display:inline-flex;align-items:center;gap:3px}
+.section-link:hover{color:var(--fg)}
+
+/* Card grid */
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:36px}
+@media(max-width:768px){.card-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.card-grid{grid-template-columns:1fr}}
+
+/* Magazine cards: no shadows, thin top border + Badge */
+.card{background:var(--card);border:1px solid var(--border);border-top:2px solid var(--accent-game);border-radius:4px;padding:14px 16px;transition:border-color 0.15s;display:block;position:relative}
+.card:hover{border-color:var(--accent-game-hover);text-decoration:none}
+.card.ai{border-top-color:var(--accent-ai)}
+.card.ai:hover{border-color:var(--accent-ai-hover)}
+.card-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px;background:var(--muted)}
+/* Hero card (span-2, large headline) */
+.card-hero{grid-column:span 2;grid-row:span 2;padding:20px 24px}
+.card-hero .card-title{font-size:1.5rem;line-height:1.2;-webkit-line-clamp:3}
+.card-hero .card-summary{font-size:0.9375rem;-webkit-line-clamp:3}
+/* Brief card (text-only, compact) */
+.card-brief{padding:8px 12px}
+.card-brief::after{display:none}
+.card-brief .card-title{font-size:0.8125rem;-webkit-line-clamp:1}
+.card-title{font-family:var(--font-display);font-size:0.9375rem;font-weight:600;line-height:1.3;margin:0 0 6px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--fg);letter-spacing:-0.01em}
+.card-summary{font-size:0.8125rem;color:var(--muted-fg);line-height:1.45;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.card-subtitle{font-size:0.6875rem;color:var(--muted-fg);margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-size:0.6875rem;color:var(--muted-fg);display:flex;align-items:center;gap:6px;font-family:var(--font-sans)}
+.card-meta a{color:var(--muted-fg);display:inline-flex;align-items:center;gap:2px}
+.card-meta a:hover{color:var(--fg)}
+/* Section divider: thin border-t, newspaper-style */
+.section-divider{border-top:1px solid var(--border);margin:20px 0;padding-top:16px}
+
+/* Article detail (专题页) — top border + Badge */
+.article-detail{background:var(--card);border:1px solid var(--border);border-top:2px solid var(--accent-game);border-radius:4px;padding:16px 20px;transition:border-color 0.15s;position:relative}
+.article-detail:hover{border-color:var(--accent-game)}
+.article-detail:last-child{margin-bottom:0}
+.article-detail h3{font-size:1rem;font-weight:500;margin-bottom:6px;line-height:1.4}
+.article-detail h3 a{color:var(--fg)}
+.article-detail .detail-summary{font-size:0.875rem;color:var(--muted-fg);line-height:1.55;margin-bottom:8px}
+.article-detail .detail-source{font-size:0.75rem;color:var(--muted-fg);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.article-detail .detail-source a{color:var(--muted-fg);display:inline-flex;align-items:center;gap:2px;font-size:0.6875rem}
+.article-detail .detail-source a:hover{color:var(--fg)}
+/* AI detail cards: subtle green tint */
+.article-detail.ai-card{border-top-color:var(--accent-ai)}
+
+/* More grid */
+.more-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:32px}
+@media(max-width:768px){.more-grid{grid-template-columns:1fr}}
+.more-section h4{font-size:0.875rem;font-weight:600;margin-bottom:10px}
+.more-list li{font-size:0.8125rem;padding:5px 0;border-bottom:1px solid var(--muted);list-style:none}
+.more-list li:last-child{border-bottom:none}
+.more-list .src{color:var(--muted-fg);font-size:0.6875rem}
+
+/* Keyword tags */
+.keywords{display:flex;flex-wrap:wrap;gap:6px}
+.keyword-tag{display:inline-block;background:var(--muted);color:var(--muted-fg);border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-size:0.75rem;transition:background 0.15s}
+.keyword-tag:hover{background:var(--border);color:var(--fg);text-decoration:none}
+
+/* Editor note */
+.editor-note{background:var(--muted);border-radius:8px;padding:18px 22px;margin:28px 0;font-size:0.875rem;color:var(--muted-fg);line-height:1.65;border-left:3px solid var(--border)}
+/* Brief list: compact rows for score<3 no-image items */
+.brief-list{display:flex;flex-direction:column;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.brief-item{display:flex;align-items:baseline;justify-content:space-between;padding:10px 16px;background:var(--card);gap:12px;border-bottom:1px solid var(--muted)}
+.brief-item:last-child{border-bottom:none}
+.brief-item h4{font-size:0.8125rem;font-weight:500;line-height:1.4;flex:1}
+.brief-item h4 a{color:var(--fg)}
+/* 全部资讯源：双列紧凑布局 */
+.sources-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.sources-grid .brief-item{border-right:1px solid var(--muted)}
+.sources-grid .brief-item:nth-child(2n){border-right:none}
+@media(max-width:640px){.sources-grid{grid-template-columns:1fr}.sources-grid .brief-item{border-right:none}}
+.brief-source{font-size:0.6875rem;color:var(--muted-fg);white-space:nowrap;flex-shrink:0}
+/* Detail cards: 2-column grid for secondary/tertiary */
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+@media(max-width:768px){.detail-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.detail-grid{grid-template-columns:1fr}}
+/* Responsive: mobile polish */
+@media(max-width:480px){
+  .brief-item{flex-direction:column;gap:2px;padding:8px 12px}
+  .brief-item h4{white-space:normal}
+  .brief-source{font-size:0.625rem}
+  .section-header{margin-bottom:12px}
+  .section-title{font-size:1rem}
+  .keywords{gap:4px}
+  .keyword-tag{font-size:0.6875rem;padding:2px 8px}
+  .footer{padding:16px;font-size:0.6875rem}
+  .card-spotlight .spotlight-text .card-title{font-size:1.125rem}
+  .card-spotlight .spotlight-text .card-summary{-webkit-line-clamp:2}
+}
+/* Spotlight card: left-image-right-text, subtle top accent */
+.card-spotlight{display:grid;grid-template-columns:7fr 5fr;gap:20px;align-items:center;padding:0;border:1px solid var(--border);border-top:2px solid var(--accent-game);border-radius:4px;overflow:hidden;background:var(--card)}
+.card-spotlight.ai{border-top-color:var(--accent-ai)}
+.card-spotlight .spotlight-img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:0;margin:0;display:block}
+.card-spotlight .spotlight-text{padding:20px 20px 20px 0}
+.card-spotlight .spotlight-text .card-title{font-size:1.5rem;line-height:1.2;-webkit-line-clamp:3}
+.card-spotlight .spotlight-text .card-summary{font-size:0.9375rem;-webkit-line-clamp:4}
+@media(max-width:640px){.card-spotlight{grid-template-columns:1fr;gap:0}
+.card-spotlight .spotlight-text{padding:16px}}
+/* No-image spotlight: text-dominant */
+.card-spotlight.no-img{grid-template-columns:1fr;padding:28px 32px;min-height:200px}
+.card-spotlight.no-img .spotlight-text .card-title{font-size:1.75rem;-webkit-line-clamp:4}
+.card-spotlight.no-img .spotlight-text .card-summary{font-size:1rem;-webkit-line-clamp:6}
+/* Side navigation */
+.side-nav{position:fixed;right:max(24px,calc((100vw - 1200px)/2 - 180px));top:100px;width:150px;z-index:5}
+@media(max-width:1100px){.side-nav{display:none}}
+.side-nav a{display:block;padding:6px 10px;font-size:0.75rem;color:var(--muted-fg);border-left:2px solid transparent;transition:color 0.15s,border-color 0.15s;text-decoration:none}
+.side-nav a:hover,.side-nav a.active{color:var(--fg);border-left-color:var(--nav-accent)}
+
+/* Footer */
+.footer{border-top:1px solid var(--border);padding:24px;font-size:0.75rem;color:var(--muted-fg);text-align:center;line-height:1.8}
+.footer a{color:var(--muted-fg)}
+.footer a:hover{color:var(--fg)}
+.footer-weekly{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:0.8125rem}
+.footer-weekly a{font-weight:500}
+.footer-weekly .game-link{color:var(--accent-game)}
+.footer-weekly .ai-link{color:var(--accent-ai)}
+
+/* Weekly/Monthly report */
+.report-header{margin-bottom:24px}
+.report-header h1{font-size:1.5rem;font-weight:600;margin-bottom:8px}
+.report-header .period{font-size:0.8125rem;color:var(--muted-fg)}
+.report-stories{margin-bottom:24px}
+/* NPC commentary — editorial column style */
+.npc-commentary{margin:28px 0;padding:24px 28px 24px 24px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--npc-accent,var(--accent-game))}
+.npc-header{display:flex;align-items:baseline;gap:8px;margin-bottom:14px}
+.npc-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--npc-accent,var(--accent-game));flex-shrink:0}
+.npc-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.npc-avatar-sm{width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-right:8px;vertical-align:middle}
+.npc-name{font-size:0.8125rem;font-weight:600;color:var(--fg);letter-spacing:0.02em;font-family:var(--font-sans)}
+.npc-review{font-family:var(--font-display);font-size:1rem;line-height:1.75;color:var(--fg)}
+@media(max-width:480px){.npc-commentary{padding:16px 18px 16px 14px}.npc-review{font-size:0.875rem}}
+/* NPC section review — magazine subhead style */
+.section-npc-review{font-family:var(--font-sans);font-size:0.875rem;color:var(--fg);padding:4px 0 4px 14px;margin-bottom:20px;border-left:2px solid var(--npc-accent,var(--border));line-height:1.6;opacity:0.85}
+.report-stories li{padding:10px 0;border-bottom:1px solid var(--muted);font-size:0.875rem;list-style:none}
+.report-stories li:last-child{border-bottom:none}
+.report-stories strong{display:block;margin-bottom:2px}
+.report-stories span{font-size:0.75rem;color:var(--muted-fg)}
+.trends-list{margin-bottom:24px}
+.trends-list li{padding:5px 0;font-size:0.875rem;list-style:none}
+.trends-list li::before{content:"- ";color:var(--muted-fg)}
+/* Review archive pages */
+.review-list{max-width:800px;margin:0 auto}
+.review-month{margin-bottom:24px}
+.review-month h2{font-size:1rem;color:var(--muted-fg);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px}
+.review-month li{font-size:0.875rem;padding:6px 0;list-style:none;line-height:1.6}
+.review-month li a{color:var(--fg)}.review-month li a:hover{color:var(--accent-game)}
+.review-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;font-size:0.8125rem}
+.review-filters a{padding:4px 12px;border-radius:4px;background:var(--muted);color:var(--muted-fg);text-decoration:none}
+.review-filters a:hover{background:var(--border);color:var(--fg)}
+.review-filters a.active{background:var(--nav-accent);color:#fff}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-brand"><img src="/images/%E5%B0%8F%E7%9F%A5.png" class="nav-brand-icon" alt="">风声驿站NPC</a>
+  <input type="checkbox" id="nav-toggle" class="nav-toggle">
+  <label for="nav-toggle" class="nav-toggle-label" aria-label="菜单"><span></span></label>
+  <div class="nav-links">
+    <a href="/">今日风声</a>
+    <a href="/gaming/" class="active">游戏风声</a>
+    <a href="/ai/">硅基风声</a>
+    <a href="/review/">往期回顾</a>
+    <a href="/search/" aria-label="搜索"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="hero-grid">
+    <div class="hero-main">
+      <div class="hero-label">游戏风声 · 2026-07-15</div>
+      <h1 class="hero-headline">Steam半年收入111亿美元创纪录</h1>
+      <p class="hero-overview">今日游戏行业动态丰富：Steam 2026上半年收入达111亿美元创历史新高；Sony因停售光盘在墨西哥面临反垄断投诉；EA在玩家强烈反对后移除《College Football 27》微交易；《Dead Space》创始人Glen Schofield宣布退休；游戏行业Q2并购交易额达23亿美元创2022年以来最高。</p>
+    </div>
+    <div class="hero-sidebar">
+      <h3>关键词</h3>
+      <div class="keywords"><a href="/search/?q=Steam" class="keyword-tag">Steam</a><a href="/search/?q=Sony" class="keyword-tag">Sony</a><a href="/search/?q=EA" class="keyword-tag">EA</a><a href="/search/?q=%E5%BE%AE%E4%BA%A4%E6%98%93" class="keyword-tag">微交易</a><a href="/search/?q=%E5%8F%8D%E5%9E%84%E6%96%AD" class="keyword-tag">反垄断</a><a href="/search/?q=%E8%A3%81%E5%91%98" class="keyword-tag">裁员</a><a href="/search/?q=Switch%202" class="keyword-tag">Switch 2</a><a href="/search/?q=%E4%B8%BB%E6%9C%BA%E5%87%BA%E8%B4%A7%E9%87%8F" class="keyword-tag">主机出货量</a><a href="/search/?q=%E5%B9%B6%E8%B4%AD" class="keyword-tag">并购</a><a href="/search/?q=%E9%80%80%E4%BC%91" class="keyword-tag">退休</a></div>
+    </div>
+  </div>
+
+  <nav class="side-nav"><a href="#sec-0">平台与市场</a>
+<a href="#sec-1">厂商与争议</a>
+<a href="#sec-2">行业与人物</a>
+<a href="#sec-3">游戏与文化</a>
+<a href="#sec-4">硬件与未来</a>
+<a href="#npc-review">NPC观点</a>
+<a href="#all-sources">全部资讯源</a>
+</nav>
+
+  
+    <div class="section-header" id="sec-0">
+      <h2 class="section-title">平台与市场</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#7C3AED"><img src="/images/小知.png" class="npc-avatar-sm" alt="小知" loading="lazy"><strong>小知：</strong>Steam破纪录是好事，但别忘了这是建立在大量独立游戏和折扣促销上的。主机出货量下滑19.5%才是真信号——玩家对高价硬件和捆绑销售越来越不买账。</div>
+    
+      <a href="https://www.gamesindustry.biz/alinea-steam-revenue-reaches-111bn-marking-highest-half-year-on-record" target="_blank" rel="noopener noreferrer" class="card-spotlight">
+        <img src="https://assetsio.gnwcdn.com/resident-evil-requiem-leon_GLCvixE.jpg?width=690&quality=85&format=jpg&auto=webp" class="spotlight-img" loading="lazy" alt="" aria-hidden="true">
+        <div class="spotlight-text">
+          <div class="card-title">Steam上半年收入111亿美元创纪录</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Alinea: Steam revenue reaches $11.1bn, marking highest half-year on record</div>
+          <div class="card-summary">数据公司Alinea Analytics估计，Steam平台2026年上半年收入达111亿美元，同比增长14.5%，创历史同期最高纪录。</div>
+          <div class="card-meta"><span>GamesIndustry.biz</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/two-people-shaking-handsradission-us--unsplash.jpg?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.gamesindustry.biz/aream-co-gaming-ma-hits-23bn-in-q2-highest-level-since-2022" target="_blank" rel="noopener noreferrer">Q2游戏并购额创2022年来新高 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Aream &amp; Co: Gaming M&amp;A hits $2.3bn in Q2, highest level since 2022</div>
+          <div class="detail-summary">投资银行Aream &amp; Co报告显示，2026年Q2游戏行业并购交易额达23亿美元，共54笔交易，创2022年以来最高水平。</div>
+          <div class="detail-source">
+            <span>GamesIndustry.biz</span>
+            <span>Tue, 14 Ju</span>
+            <a href="https://www.gamesindustry.biz/aream-co-gaming-ma-hits-23bn-in-q2-highest-level-since-2022" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/ps5-xbox-switch-2_F8SYJdH.jpg?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.gamesindustry.biz/analyst-game-console-shipments-expected-to-decline-195-to-339m-units-in-2026" target="_blank" rel="noopener noreferrer">2026年游戏主机出货量预计下降19.5% <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Analyst: Game console shipments expected to decline 19.5% to 33.9m units in 2026</div>
+          <div class="detail-summary">分析师数据显示，2026年游戏主机出货量预计下降19.5%至3390万台。</div>
+          <div class="detail-source">
+            <span>GamesIndustry.biz</span>
+            <span>Mon, 13 Ju</span>
+            <a href="https://www.gamesindustry.biz/analyst-game-console-shipments-expected-to-decline-195-to-339m-units-in-2026" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-1">
+      <h2 class="section-title">厂商与争议</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#7C3AED"><img src="/images/小知.png" class="npc-avatar-sm" alt="小知" loading="lazy"><strong>小知：</strong>Sony在墨西哥被反垄断投诉、EA被玩家逼退微交易、Ubisoft转向精选模式——三家巨头的操作说明了一个道理：别把玩家当韭菜，否则反噬来得比你想的快。</div>
+    
+      <a href="https://www.eurogamer.net/sony-killing-discs-anti-trust-complaint-mexico" target="_blank" rel="noopener noreferrer" class="card-spotlight">
+        <img src="https://assetsio.gnwcdn.com/PS-store-mexico.jpg?width=690&quality=85&format=jpg&auto=webp" class="spotlight-img" loading="lazy" alt="" aria-hidden="true">
+        <div class="spotlight-text">
+          <div class="card-title">索尼因停止PS实体媒体在墨西哥遭反垄断投诉</div>
+          <div class="card-subtitle" style="margin-bottom:8px">Sony faces an anti-trust complaint in Mexico over ending PlayStation physical media</div>
+          <div class="card-summary">Sony因计划2028年1月停止PlayStation光盘制造，将在墨西哥面临正式反垄断投诉。</div>
+          <div class="card-meta"><span>Eurogamer.net</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/assassin" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.gamesindustry.biz/ubisoft-pivots-to-selective-model-to-reduce-reliance-on-individual-game-launches" target="_blank" rel="noopener noreferrer">育碧转向精选模式减少对单款游戏依赖 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Ubisoft pivots to &quot;selective model&quot; to reduce reliance on individual game launches</div>
+          <div class="detail-summary">Ubisoft宣布转向“更精选的模式”，减少对单款游戏发布的依赖，转而依靠老游戏目录和在线服务游戏获取收入。</div>
+          <div class="detail-source">
+            <span>GamesIndustry.biz</span>
+            <span>Tue, 14 Ju</span>
+            <a href="https://www.gamesindustry.biz/ubisoft-pivots-to-selective-model-to-reduce-reliance-on-individual-game-launches" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/ea-college-football-27.jpg?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.gamesindustry.biz/ea-removes-microtransactions-from-ea-sports-college-football-27-following-backlash" target="_blank" rel="noopener noreferrer">EA因玩家反对移除大学橄榄球27内购 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">EA removes microtransactions from EA Sports College Football 27 following backlash</div>
+          <div class="detail-summary">Electronic Arts在玩家和内容创作者强烈反对后，从《EA Sports College Football 27》中移除了微交易系统。</div>
+          <div class="detail-source">
+            <span>GamesIndustry.biz</span>
+            <span>Mon, 13 Ju</span>
+            <a href="https://www.gamesindustry.biz/ea-removes-microtransactions-from-ea-sports-college-football-27-following-backlash" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://cdn.mos.cms.futurecdn.net/kwaD2wXBQYKgDGLaTFbHvM-1280-80.jpg" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.pcgamer.com/games/fighting/fighting-game-developer-previously-accused-of-sexual-harassment-confirmed-to-be-working-on-avatar-legends-a-week-before-release/" target="_blank" rel="noopener noreferrer">被控性骚扰的格斗游戏开发者参与《阿凡达传奇》 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px"> Fighting game developer previously accused of sexual harassment confirmed to be working on Avatar Legends a week before release </div>
+          <div class="detail-summary">曾于2021年被前《Skullgirls》开发商Lab Zero起诉性骚扰的Mike Zaimont，被确认在《Avatar Legends》发售前一周参与开发。</div>
+          <div class="detail-source">
+            <span>PC Gamer</span>
+            <span>Wed, 15 Ju</span>
+            <a href="https://www.pcgamer.com/games/fighting/fighting-game-developer-previously-accused-of-sexual-harassment-confirmed-to-be-working-on-avatar-legends-a-week-before-release/" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-2">
+      <h2 class="section-title">行业与人物</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#7C3AED"><img src="/images/小知.png" class="npc-avatar-sm" alt="小知" loading="lazy"><strong>小知：</strong>Glen Schofield退休、Compulsion Games脱离Xbox、Xbox玩家要求结束裁员——行业老炮退场，中小团队独立求生，玩家开始发声。这局面对巨头来说不是好兆头。</div>
+    
+      <a href="https://www.pcgamer.com/gaming-industry/dead-space-creator-and-call-of-duty-veteran-glen-schofield-announces-retirement-i-had-a-front-row-seat-to-one-of-the-greatest-creative-explosions-in-history/" target="_blank" rel="noopener noreferrer" class="card-spotlight">
+        <img src="https://cdn.mos.cms.futurecdn.net/pywHx6NJoTNW3jtD96GwUm-1280-80.png" class="spotlight-img" loading="lazy" alt="" aria-hidden="true">
+        <div class="spotlight-text">
+          <div class="card-title">死亡空间创始人Glen Schofield宣布退休</div>
+          <div class="card-subtitle" style="margin-bottom:8px"> Dead Space creator and Call of Duty veteran Glen Schofield announces retirement: &#039;I had a front row seat to one of the greatest creative explosions in history&#039; </div>
+          <div class="card-summary">《Dead Space》创始人兼《Call of Duty》资深制作人Glen Schofield在LinkedIn宣布退休，结束35年游戏行业生涯。他曾领导《The Callisto Protocol》等项目。</div>
+          <div class="card-meta"><span>PC Gamer</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/south-of-midnight_FxyAwJf.jpg?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.gamesindustry.biz/compulsion-games-seeks-new-partnerships-following-spin-out-from-from-xbox" target="_blank" rel="noopener noreferrer">Compulsion Games脱离Xbox后寻求合作 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Compulsion Games seeks new partnerships following spin-out from from Xbox</div>
+          <div class="detail-summary">《South of Midnight》开发商Compulsion Games宣布脱离Xbox独立后，正积极寻求与其他工作室合作并提供支持。</div>
+          <div class="detail-source">
+            <span>GamesIndustry.biz</span>
+            <span>Tue, 14 Ju</span>
+            <a href="https://www.gamesindustry.biz/compulsion-games-seeks-new-partnerships-following-spin-out-from-from-xbox" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/player-voice-xbox.jpg?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.eurogamer.net/xbox-player-voice-portal-layoffs-discussion" target="_blank" rel="noopener noreferrer">玩家涌入Xbox反馈平台呼吁停止裁员 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Users flock to Xbox Player Voice portal to ask for an end to cycle of layoffs</div>
+          <div class="detail-summary">Xbox Player Voice门户上线后，大量用户涌入要求结束行业裁员循环，此前新CEO Asha Sharma承诺“重新倾听”。</div>
+          <div class="detail-source">
+            <span>Eurogamer.net</span>
+            <span>Tue, 14 Ju</span>
+            <a href="https://www.eurogamer.net/xbox-player-voice-portal-layoffs-discussion" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/steve-allison.png?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.gamesindustry.biz/former-epic-games-vp-steve-allison-appointed-chief-business-officer-at-saber-interactive" target="_blank" rel="noopener noreferrer">前Epic高管Steve Allison加入Saber <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">Former Epic Games VP Steve Allison appointed chief business officer at Saber Interactive</div>
+          <div class="detail-summary">前Epic Games副总裁Steve Allison被任命为Saber Interactive首席商务官。</div>
+          <div class="detail-source">
+            <span>GamesIndustry.biz</span>
+            <span>Tue, 14 Ju</span>
+            <a href="https://www.gamesindustry.biz/former-epic-games-vp-steve-allison-appointed-chief-business-officer-at-saber-interactive" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-3">
+      <h2 class="section-title">游戏与文化</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#7C3AED"><img src="/images/小知.png" class="npc-avatar-sm" alt="小知" loading="lazy"><strong>小知：</strong>《空之轨迹2nd》重制、DOTA2交响音乐会、波兰人保护中国老游戏——这些新闻说明游戏文化正在被认真对待。但FF7R总监受中国二次元启发这种话，听着就像厂商在讨好玩家，实际还是换皮。</div>
+    
+      <a href="https://www.gcores.com/articles/216959" target="_blank" rel="noopener noreferrer" class="card-spotlight">
+        <img src="https://image.gcores.com/172df8cb0171dacb30af87c3d01bbbbe-1920-1080.jpg?x-oss-process=image/resize,limit_1,m_fill,w_626,h_292/quality,q_90" class="spotlight-img" loading="lazy" alt="" aria-hidden="true">
+        <div class="spotlight-text">
+          <div class="card-title">空之轨迹2nd制作人采访</div>
+          <div class="card-subtitle" style="margin-bottom:8px">总结过去，放眼未来：机核采访《空之轨迹 2nd》制作人近藤季洋</div>
+          <div class="card-summary">《空之轨迹 the 1st》重制版获MC 88分，续作《the 2nd》将于2026年9月17日全球发售。制作人近藤季洋谈系列20年历程和未来方向。</div>
+          <div class="card-meta"><span>机核网</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          <img src="https://alioss.yystv.cn/doc/14154/f104c4126433ac38a4673ec826d45efa.jpg_mw680water" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.yystv.cn/p/14154" target="_blank" rel="noopener noreferrer">DOTA2交响音乐会落幕 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">全球首场DOTA2交响音乐会圆满落幕，为TI上海之夏奏响序曲</div>
+          <div class="detail-summary">7月11日，全球首场DOTA2交响音乐会在上海捷豹交响音乐厅举行，由上海交响乐团演绎游戏15年经典旋律，为2026年国际邀请赛预热，展现电竞文化跨界融合。</div>
+          <div class="detail-source">
+            <span>游研社</span>
+            <span>Tue, 14 Ju</span>
+            <a href="https://www.yystv.cn/p/14154" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://alioss.yystv.cn/doc/14151/4e591d007460dd9909ba3f4352a15780.appmsg_mw680water" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.yystv.cn/p/14151" target="_blank" rel="noopener noreferrer">波兰团队保护中国老游戏 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">一群波兰人，正计划把失传的中国老游戏保护起来</div>
+          <div class="detail-summary">索尼宣布2028年取消实体游戏光盘并关闭PS3/PS Vita商店，引发关注。一群波兰人计划保护失传的中国老游戏，不仅收藏，还让它们重新可玩。</div>
+          <div class="detail-source">
+            <span>游研社</span>
+            <span>Tue, 14 Ju</span>
+            <a href="https://www.yystv.cn/p/14151" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://alioss.yystv.cn/doc/14148/36720268da899d62accc517c3c1035bd.appmsg_mw680water" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.yystv.cn/p/14148" target="_blank" rel="noopener noreferrer">FF7总监谈中国二次元 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">当下炙手可热的日本游戏制作人，被中国的二次元圣地“刺激”到了</div>
+          <div class="detail-summary">《最终幻想7》重制系列总监浜口直樹在夏日游戏节公布三部曲终章《Revelation》，并透露受中国二次元文化启发，新作将扩展开放世界和战斗系统。</div>
+          <div class="detail-source">
+            <span>游研社</span>
+            <span>Tue, 14 Ju</span>
+            <a href="https://www.yystv.cn/p/14148" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+    <div class="section-header" id="sec-4">
+      <h2 class="section-title">硬件与未来</h2>
+    </div>
+    <div class="section-npc-review" style="--npc-accent:#7C3AED"><img src="/images/小知.png" class="npc-avatar-sm" alt="小知" loading="lazy"><strong>小知：</strong>次世代主机推迟、Switch 2 OLED传闻、《龙之信条2》移植——硬件迭代速度放缓，厂商开始吃老本。玩家对性能提升的敏感度越来越低，真正缺的是好游戏，不是更亮的屏。</div>
+    
+      <a href="https://www.eurogamer.net/dragons-dogma-2-switch-2-development" target="_blank" rel="noopener noreferrer" class="card-spotlight">
+        <img src="https://assetsio.gnwcdn.com/DD2-dark-arisen-switch.jpg?width=690&quality=85&format=jpg&auto=webp" class="spotlight-img" loading="lazy" alt="" aria-hidden="true">
+        <div class="spotlight-text">
+          <div class="card-title">龙之信条2暗黑觉醒在Switch2运行超预期</div>
+          <div class="card-subtitle" style="margin-bottom:8px">&quot;It&#039;s already exceeding our expectations on Switch 2&quot; - Dragon&#039;s Dogma 2 Dark Arisen already running at &#039;30fps and higher&#039; on Nintendo handheld</div>
+          <div class="card-summary">《Dragon&#039;s Dogma 2: Dark Arisen》在Switch 2上运行帧率已达30fps以上，表现超出预期，该版本将于今年晚些时候发布。</div>
+          <div class="card-meta"><span>Eurogamer.net</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
+        </div>
+      </a>
+    
+    <div class="detail-grid">
+      
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/blood-of-dawnwalker-next-gen-consoles.jpg?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.eurogamer.net/next-gen-console-delay-blood-of-dawnwalker-developer" target="_blank" rel="noopener noreferrer">黎明行者导演称推迟次世代主机更有利 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">A delayed next generation of consoles is &quot;better for us&quot;, says The Blood of Dawnwalker director, as price rises continue to plague the industry</div>
+          <div class="detail-summary">《The Blood of Dawnwalker》导演、前《The Witcher 3》总监Konrad Tomaszkiewicz表示，推迟次世代主机发布对行业更有利，因价格持续上涨困扰业界。</div>
+          <div class="detail-source">
+            <span>Eurogamer.net</span>
+            <span>Tue, 14 Ju</span>
+            <a href="https://www.eurogamer.net/next-gen-console-delay-blood-of-dawnwalker-developer" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+
+        <div class="article-detail">
+          <img src="https://assetsio.gnwcdn.com/oled-s2.jpg?width=690&quality=85&format=jpg&auto=webp" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:2px;margin-bottom:10px" loading="lazy" alt="" aria-hidden="true">
+          <h3><a href="https://www.eurogamer.net/nintendo-switch-2-oled-rumours" target="_blank" rel="noopener noreferrer">传闻任天堂考虑为Switch 2升级OLED屏 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h3>
+          <div style="font-size:0.75rem;color:var(--muted-fg);margin-bottom:4px">New rumours suggest Nintendo could be looking into upgrading the Switch 2 with an OLED screen</div>
+          <div class="detail-summary">继LCD面板升级传闻后，韩国科技网站爆料称Nintendo正认真考虑为Switch 2配备OLED屏幕。</div>
+          <div class="detail-source">
+            <span>Eurogamer.net</span>
+            <span>Tue, 14 Ju</span>
+            <a href="https://www.eurogamer.net/nintendo-switch-2-oled-rumours" target="_blank" rel="noopener noreferrer">原文 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+        </div>
+    </div>
+    
+
+  
+  <div class="npc-commentary" id="npc-review" style="--npc-accent:#7C3AED">
+    <div class="npc-header">
+      <img src="/images/小知.png" class="npc-avatar" alt="小知" loading="lazy">
+      <span class="npc-name">小知</span>
+    </div>
+    <div class="npc-review">Steam半年111亿美元创纪录，但这钱是玩家用钱包投票投出来的，不是厂商施舍的。Sony停售光盘被反垄断投诉、EA被逼退微交易、Xbox裁员循环引发用户抗议——三件事都指向同一个事实：厂商的贪婪已经触到玩家底线。主机出货量下滑19.5%不是市场疲软，是玩家在用脚投票。</div>
+  </div>
+
+  
+  <div class="section-divider"></div>
+  <div class="section-header">
+    <h2 class="section-title" id="all-sources">全部资讯源</h2>
+    <span style="font-size:0.75rem;color:var(--muted-fg)">22 个来源 · 各取 3 条</span>
+  </div>
+  <div class="sources-grid">
+        <div class="brief-item">
+          <h4><a href="https://automaton-media.com/articles/newsjp/glen-schofield-20260715-454996/" target="_blank" rel="noopener noreferrer">《死亡空间》之父Glen Schofield宣布引退 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Automaton Media</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://esportsinsider.com/2026/07/msi-2026-gap-between-east-and-west" target="_blank" rel="noopener noreferrer">MSI 2026证明东西方差距缩小 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Esports Insider</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gamesindustry.biz/its-not-like-the-eye-of-sauron-is-looking-at-everything-were-doing-silent-hill-f-developer-neobards-on-why-trust-is-essential-for-co-dev" target="_blank" rel="noopener noreferrer">寂静岭F开发商谈信任对合作开发的重要性 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">GamesIndustry.biz</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.eurogamer.net/call-of-duty-black-ops-1-2-ps4-ps5-ports-hacked-lobbies" target="_blank" rel="noopener noreferrer">COD黑色行动1/2重制版遭黑客入侵 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Eurogamer.net</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.pcgamer.com/movies-tv/steve-buscemi-joins-the-far-cry-tv-series-cast-and-now-were-all-wondering-will-he-be-a-weird-helpful-npc-or-a-weirdly-charismatic-villain/" target="_blank" rel="noopener noreferrer">Steve Buscemi加盟《孤岛惊魂》剧集引猜测 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">PC Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.yystv.cn/p/14152" target="_blank" rel="noopener noreferrer">边缘行者2主创解释大卫不回归 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">游研社</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gamesindustry.biz/how-evil-trout-aims-to-turn-a-cult-free-game-into-a-steam-hit-again" target="_blank" rel="noopener noreferrer">Evil Trout将免费游戏打造成Steam热门 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">GamesIndustry.biz</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.polygon.com/far-cry-tv-show-cast-steve-buscemi-noah-hawley/" target="_blank" rel="noopener noreferrer">《孤岛惊魂》剧集Steve Buscemi加盟 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Polygon</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.polygon.com/lotr-hunt-for-gollum-first-footage-teaser-andy-serkis/" target="_blank" rel="noopener noreferrer">《指环王：追捕咕噜》首支预告发布 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Polygon</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://kotaku.com/monster-hunter-wilds-getting-permanent-price-cut-ahead-of-ascendance-expansion-2000715939" target="_blank" rel="noopener noreferrer">怪物猎人荒野在资料片前永久降价 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Kotaku</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gcores.com/articles/217141" target="_blank" rel="noopener noreferrer">湮灭之潮成都试玩招募 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">机核网</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.eurogamer.net/compulsion-games-looking-for-work-xbox-cuts" target="_blank" rel="noopener noreferrer">Compulsion Games脱离Xbox后立即寻找新项目 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Eurogamer.net</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gcores.com/articles/217153" target="_blank" rel="noopener noreferrer">Steam周销量榜黑旗登顶 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">机核网</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gcores.com/articles/217157" target="_blank" rel="noopener noreferrer">蓦然回首真人电影预告 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">机核网</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.ign.com/articles/flashforge-ad5x-3d-printer-deal-july" target="_blank" rel="noopener noreferrer">闪铸AD5X 3D打印机降至$215 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">IGN News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.ign.com/articles/flashforge-adventurer-5m-3d-printer-deal-july-2026" target="_blank" rel="noopener noreferrer">闪铸Adventurer 5M降至$155 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">IGN News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.ign.com/articles/talix-10000mah-100w-power-bank-deal" target="_blank" rel="noopener noreferrer">Talix 10000mAh充电宝半价$18 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">IGN News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="http://www.chuapp.com/article/291484.html" target="_blank" rel="noopener noreferrer">蛋仔派对创作者大会 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">触乐</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gematsu.com/2026/07/the-dream-of-a-cockspur-launches-july-22" target="_blank" rel="noopener noreferrer">《公鸡之梦》7月22日发售 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Gematsu</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.4gamer.net/games/024/G102497/20260715003/" target="_blank" rel="noopener noreferrer">和风妖怪TCG《HOROBEAT卡牌游戏》11月发售 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">4Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.4gamer.net/games/612/G061218/20260714023/" target="_blank" rel="noopener noreferrer">G-SHOCK官方世界在Roblox上线 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">4Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.4gamer.net/games/011/G101138/20260710053/" target="_blank" rel="noopener noreferrer">「週刊VTuberファイル」File.129：房総なの【ユニバースプロダクション】 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">4Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://automaton-media.com/articles/newsjp/dieathlon-20260715-455009/" target="_blank" rel="noopener noreferrer">高速射击滑雪游戏《DIEATHLON》公布 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Automaton Media</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://automaton-media.com/articles/newsjp/20260715-455001/" target="_blank" rel="noopener noreferrer">PS夏季特卖开幕多款大作半价 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Automaton Media</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="http://www.chuapp.com/article/291479.html" target="_blank" rel="noopener noreferrer">万智牌漫威亮相BW <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">触乐</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gematsu.com/2026/07/castlevania-belmonts-curse-for-switch-launches-october-15" target="_blank" rel="noopener noreferrer">《恶魔城：贝尔蒙特的诅咒》10月15日登陆Switch <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Gematsu</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.eurogamer.net/marvel-rivals-season-9-player-feedback" target="_blank" rel="noopener noreferrer">漫威争锋S9视觉杂乱引玩家不满 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Eurogamer.net</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.youxituoluo.com/534656.html" target="_blank" rel="noopener noreferrer">巨人网络半年净利20亿 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">游戏陀螺</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.youxituoluo.com/534658.html" target="_blank" rel="noopener noreferrer">6月游戏流水榜发布 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">游戏陀螺</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://esportsinsider.com/2026/07/smash-no-longer-fits-evo" target="_blank" rel="noopener noreferrer">Smash回归Evo已无意义 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Esports Insider</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.polygon.com/most-expensive-video-game-ports-of-all-time/" target="_blank" rel="noopener noreferrer">盘点史上最贵的10款游戏移植版 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Polygon</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.pcgamer.com/gaming-industry/events-conferences/future-games-show-returns-to-gamescom-with-3-shows/" target="_blank" rel="noopener noreferrer"> Future Games Show returns to Gamescom with 3 show <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">PC Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.pcgamer.com/gaming-industry/epic-games-store-boss-quits-after-8-years-to-take-up-new-role-at-saber-interactive/" target="_blank" rel="noopener noreferrer"> Epic Games Store boss quits after 8 years to take <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">PC Gamer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.yystv.cn/p/14153" target="_blank" rel="noopener noreferrer">巨型RTX显卡成BW焦点 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">游研社</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.yystv.cn/p/14150" target="_blank" rel="noopener noreferrer">BW大型游戏引玩家兴奋 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">游研社</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://kotaku.com/sonys-ps5-fight-stick-will-no-longer-arrive-in-time-for-marvel-tokon-fighting-souls-after-getting-indefinitely-delayed-2000715922" target="_blank" rel="noopener noreferrer">索尼PS5摇杆无限期推迟错过漫威格斗游戏 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Kotaku</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.deconstructoroffun.com/blog/the-hidden-cost-of-studio-engineering" target="_blank" rel="noopener noreferrer">工作室工程隐性成本分析 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Deconstructor of Fun</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gamespot.com/articles/gog-wants-you-to-make-your-own-physical-games/" target="_blank" rel="noopener noreferrer">GOG鼓励玩家自制实体游戏 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">GameSpot News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gamespot.com/articles/why-are-there-so-many-benedict-cumberbatch-cards-in-magic-the-gathering/" target="_blank" rel="noopener noreferrer">《万智牌》为何有这么多本尼迪克特·康伯巴奇卡牌 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">GameSpot News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://esportsinsider.com/2026/07/combo-contest-smash-tournament" target="_blank" rel="noopener noreferrer">Combo Contest成最爱的Smash赛事 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Esports Insider</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://tieba.baidu.com/hottopic/browse/hottopic?topic_id=28356183&amp;topic_name=%E6%8A%84%E8%A2%AD%E8%AE%BA%E6%96%87%2C%E8%B4%BE%E6%B5%85%E6%B5%85%E5%AD%A6%E4%BD%8D%E8%A2%AB%E6%92%A4%E9%94%80" target="_blank" rel="noopener noreferrer">抄袭论文,贾浅浅学位被撤销 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">贴吧热榜</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://tieba.baidu.com/hottopic/browse/hottopic?topic_id=28356181&amp;topic_name=%E5%A7%86%E5%B7%B4%E4%BD%A9%E9%94%90%E8%AF%84%3A%E6%B3%95%E5%9B%BD%E9%98%9F%E5%8E%8B%E6%A0%B9%E6%B2%A1%E5%AE%9E%E5%8A%9B" target="_blank" rel="noopener noreferrer">姆巴佩锐评:法国队压根没实力 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">贴吧热榜</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://tieba.baidu.com/hottopic/browse/hottopic?topic_id=28356184&amp;topic_name=%E5%88%9D%E8%A7%81%E5%AE%9A%E7%BB%88%E8%BA%AB%2C%E8%80%81%E5%A4%96%E6%B1%82%E5%A9%9A%E4%B8%AD%E5%9B%BD%E7%90%83%E8%BF%B7" target="_blank" rel="noopener noreferrer">初见定终身,老外求婚中国球迷 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">贴吧热榜</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://kotaku.com/dear-passengers-is-peak-on-an-airplane-and-it-wants-to-be-your-next-viral-friendslop-obsession-2000715910" target="_blank" rel="noopener noreferrer">Dear Passengers Is Peak On An Airplane And It Want <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Kotaku</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gematsu.com/2026/07/final-boss-the-video-game-announced-for-pc-adaptation-of-image-comics-series" target="_blank" rel="noopener noreferrer">《最终Boss》游戏版公布 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Gematsu</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gamespot.com/articles/ea-is-finally-trying-to-save-your-sims-4-saves/" target="_blank" rel="noopener noreferrer">EA终于修复《模拟人生4》存档问题 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">GameSpot News</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://nintendoeverything.com/nintendo-unveils-new-pikmin-merchandise-exclusive-to-hot-topic/" target="_blank" rel="noopener noreferrer">Nintendo unveils new Pikmin merchandise exclusive  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Nintendo Everything</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://nintendoeverything.com/castlevania-belmonts-curse-reveals-nintendo-switch-release-date-will-not-be-delayed/" target="_blank" rel="noopener noreferrer">Castlevania: Belmont’s Curse reveals Nintendo Swit <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Nintendo Everything</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.siliconera.com/dragons-dogma-2-dark-arisen-has-new-storyline-12-dungeons/" target="_blank" rel="noopener noreferrer">Dragon’s Dogma 2 Dark Arisen Has New Storyline, 12 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Siliconera</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.rockpapershotgun.com/deckbuilder-grail-quells-the-fear-in-my-heart-of-playing-the-wrong-card-by-pinning-all-of-the-strategy-on-the-deckbuilding" target="_blank" rel="noopener noreferrer">Deckbuilder Grail quells the fear in my heart of p <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Rock Paper Shotgun</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://aftermath.site/xbox-layoffs-product-teams-fan-criticism/" target="_blank" rel="noopener noreferrer">Fans Rail Against Xbox Layoffs, Which Also Did A N <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Aftermath</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="http://www.chuapp.com/article/291483.html" target="_blank" rel="noopener noreferrer">现场看球体验 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">触乐</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://nintendoeverything.com/list-of-all-nintendo-switch-2-games-that-support-gameshare/" target="_blank" rel="noopener noreferrer">List of all Nintendo Switch 2 games that support G <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Nintendo Everything</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.gamesindustry.biz/what-does-the-future-of-external-development-look-like" target="_blank" rel="noopener noreferrer">外部开发未来展望 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">GamesIndustry.biz</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.rockpapershotgun.com/runescape-revamps-its-housing-customisation-with-a-snazzy-looking-build-mode-and-the-option-to-make-your-own-neighbourhood-with-your-pals" target="_blank" rel="noopener noreferrer">RuneScape revamps its housing customisation with a <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Rock Paper Shotgun</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.siliconera.com/beast-of-reincarnation-gameplay-trailer-prioritizes-combat/" target="_blank" rel="noopener noreferrer">Beast of Reincarnation Gameplay Trailer Prioritize <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Siliconera</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://aftermath.site/dark-souls-elden-ring-sekiro-ac6-souls-runes-farming/" target="_blank" rel="noopener noreferrer">The Definitive Ranking Of FromSoftware Farming Loc <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Aftermath</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.siliconera.com/starbites-switch-2-version-arrives-after-almost-2-months/" target="_blank" rel="noopener noreferrer">Starbites Switch 2 Version Arrives After Almost 2  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Siliconera</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://gameworldobserver.com/2026/07/14/the-creators-of-splitgate-and-empulse-have-laid-off-some-employees" target="_blank" rel="noopener noreferrer">The creators of Splitgate and Empulse have laid of <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Game World Observer</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.rockpapershotgun.com/with-dragons-dogma-2s-new-infinite-fast-travel-dark-arisens-director-wants-you-to-know-theyre-not-forcing-you-to-use-it" target="_blank" rel="noopener noreferrer">With Dragon&#039;s Dogma 2&#039;s new infinite fast travel,  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Rock Paper Shotgun</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://aftermath.site/yoshitaka-amano-is-more-centrist-on-ai-than-youd-hope/" target="_blank" rel="noopener noreferrer">Yoshitaka Amano Is More Centrist on AI Than You’d  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Aftermath</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://www.youxituoluo.com/534655.html" target="_blank" rel="noopener noreferrer">广州游戏逆袭靠小游戏 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">游戏陀螺</span>
+        </div>
+
+        <div class="brief-item">
+          <h4><a href="https://gameworldobserver.com/2026/07/13/it-seems-that-ubisoft-no-longer-believes-that-microtransactions-make-games-more-fun" target="_blank" rel="noopener noreferrer">It seems that Ubisoft no longer believes that “mic <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></h4>
+          <span class="brief-source">Game World Observer</span>
+        </div></div>
+
+  
+</div>
+<script>
+(function(){
+  const links=document.querySelectorAll('.side-nav a');
+  const sections=[...links].map(l=>document.getElementById(l.getAttribute('href').slice(1))).filter(Boolean);
+  if(!sections.length)return;
+  const observer=new IntersectionObserver((entries)=>{
+    let active=null;
+    entries.forEach(e=>{if(e.isIntersecting)active=e.target.id});
+    if(active) links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+active));
+  },{rootMargin:'-20% 0px -70% 0px'});
+  sections.forEach(s=>observer.observe(s));
+})();
+</script>
+
+<footer class="footer">
+  风声驿站NPC · <a href="/rss.xml">RSS <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></a> · <a href="https://github.com">GitHub</a>
+  
+</footer>
+</body>
+</html>
